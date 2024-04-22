@@ -1,6 +1,6 @@
 {
-  "name": "cpp-common-library",
-  "version": "0.0.8",
+  "name": "cpp-common",
+  "version": "0.0.9",
   "homepage": "https://github.com/sunzhenkai/cpp-common",
   "description": "cpp common library",
   "license": "MIT",
