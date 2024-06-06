@@ -1,0 +1,3 @@
+[submodule "3rd/vcpkg-base"]
+	path = 3rd/vcpkg-base
+	url = https://github.com/sunzhenkai/vcpkg-base.git
