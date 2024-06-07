@@ -1,8 +1,8 @@
-#include "cxxcommon/file/rw.h"
+#include "cxxcommon/core/file/rw.h"
 #include "fstream"
 #include "iostream"
 
-namespace cpp_common {
+namespace cxxcommon {
     std::vector<std::string> ReadLines(const char *fn) {
         std::vector<std::string> result;
         std::ifstream file(fn);
