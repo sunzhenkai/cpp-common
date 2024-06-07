@@ -3,6 +3,7 @@
   "version": "0.0.8",
   "dependencies": [
     "curl",
+    "fmt",
     "gtest"
   ],
   "overrides": [

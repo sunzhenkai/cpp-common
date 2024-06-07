@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cxxcommon/defines.h"
+#include "cxxcommon/common/defines.h"
 
 namespace cxxcommon {
     class HTTPResult {

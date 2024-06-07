@@ -1,10 +1,11 @@
-#include "http/http_client.h"
-#include "curl/curl.h"
 #include "cstring"
-#include "exceptions.h"
-#include "spdlog/spdlog.h"
+#include "curl/curl.h"
+#include "fmt/format.h"
+#include "cxxcommon/net/http/http_client.h"
+#include "cxxcommon/common/exceptions.h"
+#include "cxxcommon/common/log.h"
 
-namespace rtcfg {
+namespace cxxcommon::net {
     static size_t WriteCallback(void *ptr, size_t size, size_t nmemb, void *user_data) {
         size_t bts = size * nmemb;
         auto *r = (HTTPResult *) user_data;
@@ -57,7 +58,7 @@ namespace rtcfg {
 
         SList assembled_headers = AssembleHeaders(headers);
         curl_easy_reset(curl_handler);
-        spdlog::debug("[HTTPClient::Get] url. [url={}, timeout={}ms]", url, timeout);
+        CXXCOMMON_DEBUG(fmt::format("[HTTPClient::Get] url. [url={}, timeout={}ms]", url, timeout));
         curl_easy_setopt(curl_handler, CURLOPT_URL, url.c_str());
 
         HTTPResult r;

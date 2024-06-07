@@ -3,11 +3,11 @@
 
 #include "pthread.h"
 #include "curl/curl.h"
-#include "cxxcommon/defines.h"
+#include "cxxcommon/common/defines.h"
 #include "cxxcommon/net/http/http_result.h"
-#include "utils/url.h"
+#include "cxxcommon/net/net_utils.h"
 
-namespace cxxcommon {
+namespace cxxcommon::net {
 #define CURL_ERR(...) curl_easy_strerror(__VA_ARGS__)
 
     class HTTPClient {
