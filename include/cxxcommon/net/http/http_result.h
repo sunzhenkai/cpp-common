@@ -3,10 +3,10 @@
 #include "cxxcommon/common/defines.h"
 
 namespace cxxcommon {
-    class HTTPResult {
-    public:
-        long code;
-        Str content;
-        SSMap headers;
-    };
-}
+class HTTPResult {
+ public:
+  long code;
+  Str content;
+  SSMap headers;
+};
+}  // namespace cxxcommon

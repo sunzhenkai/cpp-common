@@ -3,5 +3,5 @@
 #include "cxxcommon/common/defines.h"
 
 namespace cxxcommon::net {
-    Str URLEncode(CStr &data);
+Str URLEncode(CStr& data);
 }
