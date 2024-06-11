@@ -7,16 +7,14 @@
 #include "fmt/format.h"
 
 namespace cxxcommon::net {
-static size_t WriteCallback(void* ptr, size_t size, size_t nmemb,
-                            void* user_data) {
+static size_t WriteCallback(void* ptr, size_t size, size_t nmemb, void* user_data) {
   size_t bts = size * nmemb;
   auto* r = (HTTPResult*)user_data;
   r->content.append((char*)ptr, bts);
   return bts;
 }
 
-static size_t ReadHeaderCallback(void* ptr, size_t size, size_t nmemb,
-                                 void* user_data) {
+static size_t ReadHeaderCallback(void* ptr, size_t size, size_t nmemb, void* user_data) {
   char* content = (char*)ptr;
   char* pos = strchr(content, ':');
   if (pos != nullptr) {  // ignore status
@@ -26,9 +24,7 @@ static size_t ReadHeaderCallback(void* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-HTTPClient::HTTPClient() {
-  pthread_key_create(&pthread_key_, HTTPClient::DestroyCurlHandler);
-}
+HTTPClient::HTTPClient() { pthread_key_create(&pthread_key_, HTTPClient::DestroyCurlHandler); }
 
 SSMap HTTPClient::EMPTY_MAP{};
 
@@ -49,8 +45,7 @@ CURL* HTTPClient::GetCurlHandler() const {
   return curl_handler;
 }
 
-HTTPResult HTTPClient::Get(const Str& path, const SSMap& params,
-                           const SSMap& headers, long timeout) {
+HTTPResult HTTPClient::Get(const Str& path, const SSMap& params, const SSMap& headers, long timeout) {
   CURL* curl_handler = GetCurlHandler();
   CURLcode curl_res;
   Str url = path;
@@ -62,8 +57,7 @@ HTTPResult HTTPClient::Get(const Str& path, const SSMap& params,
 
   SList assembled_headers = AssembleHeaders(headers);
   curl_easy_reset(curl_handler);
-  CXXCOMMON_DEBUG(fmt::format("[HTTPClient::Get] url. [url={}, timeout={}ms]",
-                              url, timeout));
+  CXXCOMMON_DEBUG(fmt::format("[HTTPClient::Get] url. [url={}, timeout={}ms]", url, timeout));
   curl_easy_setopt(curl_handler, CURLOPT_URL, url.c_str());
 
   HTTPResult r;
@@ -87,8 +81,6 @@ HTTPResult HTTPClient::Get(const Str& path, const SSMap& params,
   }
 
   if (curl_res != CURLE_OK) {
-    //            spdlog::debug("[HTTPClient::Get] curl_easy_perform() failed:
-    //            {} - {}", curl_res, CURL_ERR(curl_res));
     if (curl_res == CURLE_OPERATION_TIMEDOUT) {
       throw ReadTimeoutException(url + " - " + CURL_ERR(curl_res));
     } else {

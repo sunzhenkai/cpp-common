@@ -7,16 +7,17 @@
 #include "defines.h"
 
 namespace cxxcommon {
+
+enum ErrCode { CODE_SUCCESS = 0, CODE_FAILED = 1 };
+
 class NetworkException : public std::exception {
  private:
   int code_;
   Str message_;
 
  public:
-  NetworkException(int code, const char* message)
-      : code_(code), message_(message){};
-  NetworkException(int code, Str message)
-      : code_(code), message_(std::move(message)){};
+  NetworkException(int code, const char* message) : code_(code), message_(message){};
+  NetworkException(int code, Str message) : code_(code), message_(std::move(message)){};
   ~NetworkException() override = default;
   const char* what() const noexcept override { return message_.c_str(); }
   int code() const { return code_; }
@@ -35,7 +36,7 @@ class RTException : public std::exception {
   Str message_;
 
  public:
-  explicit RTException(Str message) : message_(std::move(message)) {}
+  explicit RTException(Str message) : message_(MOVE(message)) {}
 
   const char* what() const noexcept override { return message_.c_str(); }
 };
