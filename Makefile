@@ -14,3 +14,6 @@ test:
 	# run all test: make run_test cases='*'
 	@./build/tests/gtest_main --gtest_filter=$(cases)
 
+test-all:
+	@./build/tests/gtest_main --gtest_filter="*"
+

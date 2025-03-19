@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(cppcommon)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-Wall)
 include(GNUInstallDirs) # CMAKE_INSTALL_INCLUDEDIR / CMAKE_INSTALL_LIBDIR / ...
 
@@ -9,6 +10,7 @@ if(BUILD_TESTING)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install/)
 endif()
 
+include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)
 file(GLOB_RECURSE LIB_SRCS cppcommon/*.cc)
 
