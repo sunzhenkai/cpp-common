@@ -8,7 +8,7 @@
 
 namespace cppcommon {
 template <class T> class Singleton {
-private:
+protected:
   Singleton() = default;
   virtual ~Singleton() = default;
   Singleton(const Singleton &) = delete;
