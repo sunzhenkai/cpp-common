@@ -2,7 +2,7 @@
 #include "fstream"
 #include "iostream"
 
-namespace cpp_common {
+namespace cppcommon {
 std::vector<std::string> ReadLines(const char *fn) {
   std::vector<std::string> result;
   std::ifstream file(fn);
@@ -28,4 +28,4 @@ std::string ReadFile(const char *fn) {
   infile.read(result.data(), length + 1);
   return result;
 }
-} // namespace cpp_common
+} // namespace cppcommon

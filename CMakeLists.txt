@@ -4,7 +4,10 @@ set(CMAKE_CXX_STANDARD 17)
 add_definitions(-Wall)
 include(GNUInstallDirs) # CMAKE_INSTALL_INCLUDEDIR / CMAKE_INSTALL_LIBDIR / ...
 
-# include_directories(include)
+if(BUILD_TESTING)
+  # set testing install prefix
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install/)
+endif()
 
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)
 file(GLOB_RECURSE LIB_SRCS cppcommon/*.cc)
@@ -15,6 +18,10 @@ target_include_directories(
                          "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
+
 # install files
 install(
   TARGETS ${PROJECT_NAME}
@@ -22,7 +29,11 @@ install(
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(DIRECTORY include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+install(
+  DIRECTORY cppcommon
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  FILES_MATCHING
+  PATTERN "*.h")
 install(
   EXPORT ${PROJECT_NAME}
   DESTINATION share/${PROJECT_NAME}
