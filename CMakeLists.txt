@@ -2,21 +2,20 @@ cmake_minimum_required(VERSION 3.20)
 project(cppcommon)
 set(CMAKE_CXX_STANDARD 17)
 add_definitions(-Wall)
+include(GNUInstallDirs) # CMAKE_INSTALL_INCLUDEDIR / CMAKE_INSTALL_LIBDIR / ...
 
-include_directories(include)
+# include_directories(include)
 
-aux_source_directory(src SRCS)
-aux_source_directory(src/io/file SRCS)
+file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)
+file(GLOB_RECURSE LIB_SRCS cppcommon/*.cc)
 
-add_library(${PROJECT_NAME} ${SRCS})
+add_library(${PROJECT_NAME} ${LIB_HREADERS} ${LIB_SRCS})
 target_include_directories(
   ${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                          "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
-set_target_properties(${PROJECT_NAME} PROPERTIES)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # install files
-include(GNUInstallDirs) # CMAKE_INSTALL_INCLUDEDIR / CMAKE_INSTALL_LIBDIR / ...
 install(
   TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}

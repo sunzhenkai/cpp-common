@@ -2,3 +2,7 @@
 cmake-build-*
 build
 vcpkg-build
+release
+.cache
+*.log
+vcpkg_installed

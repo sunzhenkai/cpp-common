@@ -5,6 +5,7 @@
   "description": "cpp common library",
   "license": "MIT",
   "dependencies": [
+    "gtest",
     {
       "name": "vcpkg-cmake",
       "host": true
