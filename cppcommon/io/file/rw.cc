@@ -1,4 +1,8 @@
 #include "rw.h"
+
+#include <sstream>
+#include <stdexcept>
+
 #include "fstream"
 #include "iostream"
 
@@ -28,4 +32,21 @@ std::string ReadFile(const char *fn) {
   infile.read(result.data(), length + 1);
   return result;
 }
-} // namespace cppcommon
+
+void ReadFileByLine(const char *fn, const std::function<void(size_t, std::string_view)> &cb) {
+  std::ifstream file(fn);
+  if (file.is_open()) {
+    std::string line;
+    size_t line_number{0};
+    while (std::getline(file, line)) {
+      cb(line_number++, line);
+    }
+    file.close();
+  } else {
+    std::stringstream ss;
+    ss << "open file failed. file=" << fn;
+    throw std::runtime_error(ss.str());
+  }
+}
+
+}  // namespace cppcommon
