@@ -15,5 +15,5 @@ test:
 	@./build/tests/gtest_main --gtest_filter=$(cases)
 
 test-all:
-	@./build/tests/gtest_main --gtest_filter="*"
+	@./build/tests/gtest_main #--gtest_filter="*"
 

@@ -1,5 +1,8 @@
 #include "rw.h"
 
+#include <sys/resource.h>
+
+#include <fstream>
 #include <sstream>
 #include <stdexcept>
 
