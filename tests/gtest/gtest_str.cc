@@ -1,3 +1,6 @@
+#include <string>
+#include <string_view>
+
 #include "cppcommon/utils/str.h"
 #include "gtest/gtest.h"
 
@@ -28,18 +31,20 @@ TEST(Str, Split) {
   std::cout << cppcommon::ToString(r) << std::endl;
 
   // case 3
-  s = "a.b.c";
-  cppcommon::StringSplit(r, s, delimeter);
+  std::string_view sv;
+  sv = "a.b.c";
+  cppcommon::StringSplit(r, sv, delimeter);
   std::cout << cppcommon::ToString(r) << std::endl;
-  cppcommon::StringSplit(r, s, delimeter, true);
+  cppcommon::StringSplit(r, sv, delimeter, true);
   std::cout << cppcommon::ToString(r) << std::endl;
 
   // case 4
-  s = ".";
-  cppcommon::StringSplit(r, s, delimeter);
-  std::cout << cppcommon::ToString(r) << std::endl;
-  cppcommon::StringSplit(r, s, delimeter, true);
-  std::cout << cppcommon::ToString(r) << std::endl;
+  std::vector<std::string_view> rsv;
+  sv = ".";
+  cppcommon::StringSplit(rsv, sv, delimeter);
+  std::cout << cppcommon::ToString(rsv) << std::endl;
+  cppcommon::StringSplit(rsv, sv, delimeter, true);
+  std::cout << cppcommon::ToString(rsv) << std::endl;
 
   // case 5
   s = "..";
