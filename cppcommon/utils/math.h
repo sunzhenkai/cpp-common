@@ -1,0 +1,12 @@
+/**
+ * @file math.h
+ * @brief math utils
+ * @author zhenkai.sun
+ * @date 2025-03-21 13:40:50
+ */
+#pragma once
+#include <cmath>
+
+namespace cppcommon {
+double sigmoid(double x);
+}  // namespace cppcommon
