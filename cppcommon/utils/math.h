@@ -8,5 +8,5 @@
 #include <cmath>
 
 namespace cppcommon {
-double sigmoid(double x);
+double Sigmoid(double x);
 }  // namespace cppcommon
