@@ -15,6 +15,17 @@
 
 using namespace std::string_view_literals;
 namespace cppcommon {
+inline std::string ToString(int argc, char **argv) {
+  std::stringstream ss;
+  ss << "[";
+  for (int i = 0; i < argc; ++i) {
+    if (i != 0) ss << ",";
+    ss << "\"" << *(argv + i) << "\"";
+  }
+  ss << "]";
+  return ss.str();
+}
+
 template <typename T>
 std::string ToString(const std::vector<T> &v) {
   std::stringstream ss;
