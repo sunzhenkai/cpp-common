@@ -12,8 +12,7 @@ endif()
 
 # 3rd packages
 find_package(spdlog CONFIG REQUIRED)
-find_package(absl CONFIG REQUIRED)
-set(THIRD_LIBRARIES spdlog::spdlog absl::strings)
+set(THIRD_LIBRARIES spdlog::spdlog)
 
 include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)
