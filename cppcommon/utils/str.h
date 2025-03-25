@@ -30,7 +30,7 @@ template <typename T>
 std::string ToString(const std::vector<T> &v) {
   std::stringstream ss;
   ss << "[";
-  for (int i = 0; i < v.size(); ++i) {
+  for (size_t i = 0; i < v.size(); ++i) {
     if (i != 0) ss << ",";
     ss << "\"" << v[i] << "\"";
   }

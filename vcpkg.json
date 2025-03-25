@@ -6,6 +6,7 @@
   "license": "MIT",
   "dependencies": [
     "gtest",
+    "spdlog",
     {
       "name": "vcpkg-cmake",
       "host": true
