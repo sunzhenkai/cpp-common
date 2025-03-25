@@ -5,7 +5,6 @@
   "description": "cpp common library",
   "license": "MIT",
   "dependencies": [
-    "abseil",
     "gtest",
     "spdlog",
     {
