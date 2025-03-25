@@ -6,3 +6,4 @@ release
 .cache
 *.log
 vcpkg_installed
+log

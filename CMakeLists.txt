@@ -10,15 +10,16 @@ if(BUILD_TESTING)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install/)
 endif()
 
+# 3rd packages
+find_package(spdlog CONFIG REQUIRED)
+find_package(absl CONFIG REQUIRED)
+set(THIRD_LIBRARIES spdlog::spdlog absl::strings)
+
 include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)
 file(GLOB_RECURSE LIB_SRCS cppcommon/*.cc)
-
 add_library(${PROJECT_NAME} ${LIB_HREADERS} ${LIB_SRCS})
-target_include_directories(
-  ${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-                         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} ${THIRD_LIBRARIES})
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
