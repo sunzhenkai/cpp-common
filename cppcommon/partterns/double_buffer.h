@@ -38,7 +38,7 @@ class DoubleBuffer {
 
  private:
   size_t read_index() const { return 1 - write_index_.load(std::memory_order_acquire); }
-  size_t write_index() const { return write_index_.load(std::memory_order_release); }
+  size_t write_index() const { return write_index_.load(std::memory_order_relaxed); }
 
  private:
   std::array<T, 2> buffers_;
