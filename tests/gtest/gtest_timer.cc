@@ -17,3 +17,14 @@ TEST(Timer, A) {
   std::this_thread::sleep_for(10s);
   spdlog::info("Done");
 }
+
+TEST(Timer, B) {
+  cppcommon::Timer timer(
+      []() {
+        spdlog::info("run once");
+        std::this_thread::sleep_for(2s);
+      },
+      1s);
+  timer.Start();
+  std::this_thread::sleep_for(10s);
+}
