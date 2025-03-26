@@ -29,8 +29,8 @@ inline std::string ToString(int argc, char **argv) {
 template <typename T>
 std::string ToString(const std::vector<T> &v) {
   std::stringstream ss;
+  ss << "[";
   for (size_t i = 0; i < v.size(); ++i) {
-    ss << "[";
     if (i != 0) ss << ",";
     ss << "\"" << v[i] << "\"";
   }
@@ -64,13 +64,13 @@ void StringSplit(std::vector<R> &result, const D &data, const char &delimeter, b
   size_t end = data.find(delimeter);
   while (end != std::string::npos) {
     if (!ignore_empty || end > start) {
-      result.emplace_back(data.substr(start, end - start));
+      result.emplace_back(data.data() + start, end - start);
     }
     start = end + 1;
     end = data.find(delimeter, start);
   }
   if (!ignore_empty || data.size() > start) {
-    result.emplace_back(data.substr(start));
+    result.emplace_back(data.data() + start, data.size() - start);
   }
 }
 
