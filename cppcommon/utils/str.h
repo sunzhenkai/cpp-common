@@ -38,13 +38,20 @@ std::string ToString(const std::vector<T> &v) {
   return ss.str();
 }
 
+template <typename T>
+std::string ToString(const T &v) {
+  std::stringstream ss;
+  ss << '"' << v << '"';
+  return ss.str();
+}
+
 template <typename K, typename V>
 std::string ToString(const std::unordered_map<K, V> &m) {
   std::stringstream ss;
   ss << "{";
   for (auto it = m.begin(); it != m.end(); ++it) {
     if (it != m.begin()) ss << ",";
-    ss << "\"" << it->first << "\":" << "\"" << it->second << "\"";
+    ss << ToString(it->first) << ":" << ToString(it->second);
   }
   ss << "}";
   return ss.str();
@@ -57,13 +64,13 @@ void StringSplit(std::vector<R> &result, const D &data, const char &delimeter, b
   size_t end = data.find(delimeter);
   while (end != std::string::npos) {
     if (!ignore_empty || end > start) {
-      result.emplace_back(data.substr(start, end - start));
+      result.emplace_back(data.data() + start, end - start);
     }
     start = end + 1;
     end = data.find(delimeter, start);
   }
   if (!ignore_empty || data.size() > start) {
-    result.emplace_back(data.substr(start));
+    result.emplace_back(data.data() + start, data.size() - start);
   }
 }
 
