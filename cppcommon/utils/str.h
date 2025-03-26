@@ -29,12 +29,19 @@ inline std::string ToString(int argc, char **argv) {
 template <typename T>
 std::string ToString(const std::vector<T> &v) {
   std::stringstream ss;
-  ss << "[";
   for (size_t i = 0; i < v.size(); ++i) {
+    ss << "[";
     if (i != 0) ss << ",";
     ss << "\"" << v[i] << "\"";
   }
   ss << "]";
+  return ss.str();
+}
+
+template <typename T>
+std::string ToString(const T &v) {
+  std::stringstream ss;
+  ss << '"' << v << '"';
   return ss.str();
 }
 
@@ -44,7 +51,7 @@ std::string ToString(const std::unordered_map<K, V> &m) {
   ss << "{";
   for (auto it = m.begin(); it != m.end(); ++it) {
     if (it != m.begin()) ss << ",";
-    ss << "\"" << it->first << "\":" << "\"" << it->second << "\"";
+    ss << ToString(it->first) << ":" << ToString(it->second);
   }
   ss << "}";
   return ss.str();

@@ -1,5 +1,8 @@
+#include <spdlog/spdlog.h>
+
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "cppcommon/utils/str.h"
 #include "gtest/gtest.h"
@@ -118,4 +121,10 @@ TEST(Str, SplitWithFilter) {
   cppcommon::StrSplitWithFilter(r, s, '.', "bb"sv, true);
   std::cout << cppcommon::ToString(r) << std::endl;
   ASSERT_EQ(r.size(), 0);
+}
+
+TEST(Str, ToString) {
+  std::unordered_map<std::string, int> si = {{"a", 1}, {"b", 2}};
+  std::unordered_map<int, std::unordered_map<std::string, int>> im = {{101, si}};
+  spdlog::info("si={}, im={}", cppcommon::ToString(si), cppcommon::ToString(im));
 }
