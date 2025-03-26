@@ -8,10 +8,16 @@
 #include <iostream>
 
 namespace cppcommon {
-template <typename T> void Assert(bool condition, T message) {
+#ifndef EXPECT
+#define EXPECT(expr, message) \
+  if (!(expr)) throw std::runtime_error(message);
+#endif
+
+template <typename T>
+void Assert(bool condition, T message) {
   if (!condition) {
     std::cerr << "Assertion failed: " << message << std::endl;
     std::abort();
   }
 }
-}; // namespace cppcommon
+};  // namespace cppcommon
