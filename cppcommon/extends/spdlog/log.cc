@@ -6,5 +6,5 @@
 #include <memory>
 
 namespace cppcommon::extends {
-const std::shared_ptr<spdlog::logger> kConsoleLogger = spdlog::stdout_logger_mt("cppcommon_console_logger");
+const std::shared_ptr<spdlog::logger> kConsoleLogger = spdlog::stdout_logger_mt("stdout");
 }
