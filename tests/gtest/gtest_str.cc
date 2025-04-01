@@ -95,7 +95,7 @@ TEST(StringSplit, Split) {
   std::cout << cppcommon::ToString(r) << std::endl;
 }
 
-TEST(Str, SplitWithFilter) {
+TEST(StrSplitWithFilter, Base) {
   std::string s;
   std::vector<std::string> r;
 
@@ -169,4 +169,19 @@ TEST(Str, ToString) {
 
   auto s = R"("Beijing": "China")";
   spdlog::info("{}", s);
+}
+
+TEST(StrSplitWithFilter, Badcase) {
+  std::string t = "106";
+  std::vector<std::string_view> svs;
+  cppcommon::StrSplitWithFilter(svs, t, ',', "-"sv, true);
+  spdlog::info("svs: {}", cppcommon::ToString(svs));
+  ASSERT_EQ(svs.size(), 1);
+  ASSERT_EQ(svs[0], "106");
+
+  std::vector<std::string> sv;
+  cppcommon::StrSplitWithFilter(sv, t, ',', "-"sv, true);
+  spdlog::info("svs: {}", cppcommon::ToString(sv));
+  ASSERT_EQ(sv.size(), 1);
+  ASSERT_EQ(sv[0], "106");
 }
