@@ -95,10 +95,8 @@ void StrSplitWithFilter(std::vector<R> &result, const D &data, const char &delim
 
   if (start == data.size() || std::strncmp(data.data() + start, filter.data(), data.size() - start) != 0) {
     if (!ignore_empty || data.size() > start) {
-      spdlog::info("CKPT {} - {}", start, data.substr(start));
       // result.emplace_back(data.substr(start));
       result.emplace_back(data.data() + start, data.size() - start);
-      spdlog::info("CKPT {} - {} - {}", start, data.substr(start), ToString(result));
     }
   }
 }
