@@ -30,5 +30,12 @@ void WriteFile(const char *fp, const T &data) {
   }
 }
 
-void ReadFileByLine(const char *fn, const std::function<void(size_t, std::string_view)> &cb);
+/**
+ * @brief read file line by line
+ * @param fn file path
+ * @param cb call back
+ * @param remove_cr remove the ending \r. when read the file in linux
+ *  which generated in windows, the line text will endswith \r
+ */
+void ReadFileByLine(const char *fp, const std::function<void(size_t, std::string_view)> &cb, bool remove_cr = true);
 }  // namespace cppcommon
