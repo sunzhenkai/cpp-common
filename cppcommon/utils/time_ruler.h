@@ -7,7 +7,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <ratio>
 #include <sstream>
 namespace cppcommon {
 class TimeRuler {
