@@ -2,8 +2,8 @@
 #include "gtest/gtest.h"
 
 TEST(Spdlog, Log) {
-  ERROR("[{}] error.", __func__);
-  CRITICAL("[{}] critical.", __func__);
+  RERROR("[{}] error.", __func__);
+  RCRITICAL("[{}] critical.", __func__);
 
   // runtime
   RUNTIME_DEBUG("[{}] runtime debug.", __func__);
