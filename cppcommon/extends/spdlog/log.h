@@ -57,26 +57,26 @@ DECLARE_LOGGER(Record, record, 1024, 5, SPDLOG_LEVEL, GENERAL_LOG_FORMAT);
 #define RUNTIME_CRITICAL(format, args...) \
   SPDLOG_LOGGER_CRITICAL(cppcommon::extends::RuntimeLogger::GetLogger(), format, ##args)
 
-//< INFO, WARN, ERROR, CRITICAL for important log printing
+//< RINFO, RWARN, RERROR, RCRITICAL for important log printing
 //< these logs will be sinked into stdout and record.log
-#ifndef INFO
-#define INFO(format, args...)                                                        \
+#ifndef RINFO
+#define RINFO(format, args...)                                                       \
   SPDLOG_LOGGER_INFO(cppcommon::extends::RecordLogger::GetLogger(), format, ##args); \
   cppcommon::extends::kConsoleLogger->info(format, ##args);
-#endif  // !INFO
-#ifndef WARN
-#define WARN(format, args...)                                                        \
+#endif  // !RINFO
+#ifndef RWARN
+#define RWARN(format, args...)                                                       \
   SPDLOG_LOGGER_WARN(cppcommon::extends::RecordLogger::GetLogger(), format, ##args); \
   cppcommon::extends::kConsoleLogger->warn(format, ##args);
-#endif  // !WARN
-#ifndef ERROR
-#define ERROR(format, args...)                                                        \
+#endif  // !RWARN
+#ifndef RERROR
+#define RERROR(format, args...)                                                       \
   SPDLOG_LOGGER_ERROR(cppcommon::extends::RecordLogger::GetLogger(), format, ##args); \
   cppcommon::extends::kConsoleLogger->error(format, ##args);
-#endif  // !ERROR
-#ifndef CRITICAL
-#define CRITICAL(format, args...)                                                        \
+#endif  // !RERROR
+#ifndef RCRITICAL
+#define RCRITICAL(format, args...)                                                       \
   SPDLOG_LOGGER_CRITICAL(cppcommon::extends::RecordLogger::GetLogger(), format, ##args); \
   cppcommon::extends::kConsoleLogger->critical(format, ##args);
-#endif  // !CRITICAL
+#endif  // !RCRITICAL
 }  // namespace cppcommon::extends
