@@ -14,4 +14,4 @@ namespace cppcommon {
  * @param [in] dft default value
  */
 std::string GetEnv(const std::string &key, const std::string &dft);
-} // namespace cppcommon
+}  // namespace cppcommon
