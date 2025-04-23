@@ -23,7 +23,9 @@ inline auto CurrentTs() {
 struct DateInfo {
   std::tm *utc_time;
 
-  inline int GetWeekDayNormal() { return utc_time->tm_wday; }
+  // sunday: 0, monday~staurday: 1~6
+  inline int GetWeekDay() { return utc_time->tm_wday; }
+  // monday~sunday: 0~6
   inline int GetWeekDayShift() { return utc_time->tm_wday == 0 ? 6 : utc_time->tm_wday - 1; }
   inline int GetYear() { return utc_time->tm_year; }
   inline int GetYearDay() { return utc_time->tm_yday; }
