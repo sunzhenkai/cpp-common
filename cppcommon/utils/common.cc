@@ -23,16 +23,9 @@ double RandomDouble(const double &min, const double &max) {
   return dist(gRandomGenerator);
 }
 
-int GetWeekEnd(int64_t timestamp_ms, int timezone_offset) {
-  if (timestamp_ms < 0) {
-    timestamp_ms = CurrentTs();
-  }
-  auto ts_s = timestamp_ms / 1000 + timezone_offset * 3600;
-  auto t = static_cast<std::time_t>(ts_s);
-  std::tm *utc_time = std::gmtime(&t);
-  utc_time->tm_hour += timezone_offset;
-  std::mktime(utc_time);
+int GetWeekDay(int64_t timestamp_ms, int timezone_offset) {
+  auto di = GetDateInfo(timestamp_ms, timezone_offset);
   // default tm_wday: sunday ~ saturday
-  return utc_time->tm_wday == 0 ? 6 : utc_time->tm_wday - 1;
+  return di.utc_time->tm_wday == 0 ? 6 : di.utc_time->tm_wday - 1;
 }
 }  // namespace cppcommon
