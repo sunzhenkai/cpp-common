@@ -5,12 +5,23 @@
  * @date 2025-03-25 21:50:05
  */
 #pragma once
+#include <chrono>
 #include <exception>
-#include <random>
+#include <string>
 
 namespace cppcommon {
 uint32_t RandomInt(const int &min = 0, const int &max = 0);
 double RandomDouble(const double &min = 0, const double &max = 1);
+/// @brief get the day of the week, from 0 to 6
+///   default timezone is utc 0 zone
+int GetWeekEnd(int64_t timestamp_ms = -1, int timezone_offset = 0);
+
+template <typename Unit = std::chrono::milliseconds>
+inline auto CurrentTs() {
+  auto now = std::chrono::high_resolution_clock::now();
+  auto d = now.time_since_epoch();
+  return std::chrono::duration_cast<Unit>(d).count();
+}
 
 template <typename E>
 std::string WhatError(E ep) {
