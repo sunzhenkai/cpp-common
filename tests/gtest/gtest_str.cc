@@ -182,6 +182,10 @@ TEST(Str, ToString) {
   spdlog::info("{}", cppcommon::ToString(12));
   spdlog::info("{}", cppcommon::ToString("121312"));
   spdlog::info("{}", cppcommon::ToString("dddd"));
+
+  std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> results = {
+      {"k1", {{"kk1", {"v1", "v2", "v3"}}}}, {"k2", {{"kk2", {"v1", "v2", "v3"}}}}};
+  spdlog::info("{}", cppcommon::ToString(results));
 }
 
 TEST(StrSplitWithFilter, Badcase) {

@@ -49,6 +49,9 @@ struct is_string_like
 template <typename T>
 constexpr bool is_string_like_v = is_string_like<T>::value;
 
+template <template <typename...> class Container, typename T, typename... Args>
+std::string ContainerToString(const Container<T, Args...>& container);
+
 template <typename T>
 std::string ValueToString(const T& value) {
   std::stringstream ss;
