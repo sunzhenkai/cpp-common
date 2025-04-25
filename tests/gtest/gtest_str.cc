@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "cppcommon/utils/str.h"
+#include "cppcommon/utils/to_str.h"
 #include "gtest/gtest.h"
 
 TEST(StringSplit, Split) {
@@ -169,6 +170,18 @@ TEST(Str, ToString) {
 
   auto s = R"("Beijing": "China")";
   spdlog::info("{}", s);
+
+  std::unordered_map<std::string, std::string> ss = {{"a", "1"}, {"b", "2"}};
+  std::vector<std::unordered_map<std::string, std::string>> ssv = {ss, ss};
+  spdlog::info("{}", cppcommon::ToString(ss));
+  spdlog::info("{}", cppcommon::ToString(ssv));
+
+  std::vector<std::string> sv = {"aaaa", "bbbb"};
+  spdlog::info("{}", cppcommon::ToString(sv));
+  spdlog::info("{}", cppcommon::ToString(111));
+  spdlog::info("{}", cppcommon::ToString(12));
+  spdlog::info("{}", cppcommon::ToString("121312"));
+  spdlog::info("{}", cppcommon::ToString("dddd"));
 }
 
 TEST(StrSplitWithFilter, Badcase) {
