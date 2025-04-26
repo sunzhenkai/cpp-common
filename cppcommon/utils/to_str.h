@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <variant>
 
+#include "cppcommon/utils/type_traits.h"
+
 namespace cppcommon {
 inline std::string ToString(int argc, char** argv) {
   std::stringstream ss;
@@ -25,31 +27,12 @@ inline std::string ToString(int argc, char** argv) {
   return ss.str();
 }
 
+// Forward declaration for recursive calls
 template <typename T>
-struct unwrap_type {
-  using type = std::remove_cv_t<std::remove_reference_t<T>>;
-};
+std::string ContainerToString(const T& container);
 
-template <typename T>
-using unwrap_type_t = typename unwrap_type<T>::type;
-
-template <typename T>
-struct is_basic_or_string_like
-    : std::disjunction<std::is_arithmetic<unwrap_type_t<T>>, std::is_same<unwrap_type_t<T>, std::string>,
-                       std::is_same<unwrap_type_t<T>, std::string_view>> {};
-
-template <typename T>
-constexpr bool is_basic_or_string_like_v = is_basic_or_string_like<T>::value;
-
-template <typename T>
-struct is_string_like
-    : std::disjunction<std::is_same<unwrap_type_t<T>, std::string>, std::is_same<unwrap_type_t<T>, std::string_view>> {
-};
-
-template <typename T>
-constexpr bool is_string_like_v = is_string_like<T>::value;
-
-template <template <typename...> class Container, typename T, typename... Args>
+template <template <typename...> class Container, typename T, typename... Args,
+          std::enable_if_t<!is_string_like_v<Container<T, Args...>>, int> = 0>
 std::string ContainerToString(const Container<T, Args...>& container);
 
 template <typename T>
@@ -66,10 +49,6 @@ std::string ValueToString(const T& value) {
   }
   return ss.str();
 }
-
-// Forward declaration for recursive calls
-template <typename T>
-std::string ContainerToString(const T& container);
 
 // Specialization for map-like containers
 template <typename Key, typename Value, typename Compare, typename Alloc>
@@ -104,8 +83,8 @@ std::string ContainerToString(const std::unordered_map<Key, Value, Hash, Pred, A
   return ss.str();
 }
 
-// General case for other container types (assumed to be array-like)
-template <template <typename...> class Container, typename T, typename... Args>
+template <template <typename...> class Container, typename T, typename... Args,
+          std::enable_if_t<!is_string_like_v<Container<T, Args...>>, int>>
 std::string ContainerToString(const Container<T, Args...>& container) {
   std::stringstream ss;
   ss << "[";

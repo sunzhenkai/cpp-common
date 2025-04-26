@@ -171,13 +171,22 @@ TEST(Str, ToString) {
   auto s = R"("Beijing": "China")";
   spdlog::info("{}", s);
 
-  std::unordered_map<std::string, std::string> ss = {{"a", "1"}, {"b", "2"}};
+  std::unordered_map<std::string, std::string> ss = {{"a", "111111"}, {"b", "222222"}};
+  ASSERT_EQ(R"({"b":"222222","a":"111111"})", cppcommon::ToString(ss));
   std::vector<std::unordered_map<std::string, std::string>> ssv = {ss, ss};
+  ASSERT_EQ(R"([{"b":"222222","a":"111111"},{"b":"222222","a":"111111"}])", cppcommon::ToString(ssv));
   spdlog::info("{}", cppcommon::ToString(ss));
   spdlog::info("{}", cppcommon::ToString(ssv));
 
   std::vector<std::string> sv = {"aaaa", "bbbb"};
+  ASSERT_EQ(R"(["aaaa","bbbb"])", cppcommon::ToString(sv));
+  std::vector<std::string_view> svv = {"aaaa"sv, "bbbb"sv};
+  ASSERT_EQ(R"(["aaaa","bbbb"])", cppcommon::ToString(svv));
+  std::vector<char *> svc = {"aaaa", "bbbb"};
+  ASSERT_EQ(R"(["aaaa","bbbb"])", cppcommon::ToString(svc));
+
   spdlog::info("{}", cppcommon::ToString(sv));
+  spdlog::info("{}", cppcommon::ToString(svv));
   spdlog::info("{}", cppcommon::ToString(111));
   spdlog::info("{}", cppcommon::ToString(12));
   spdlog::info("{}", cppcommon::ToString("121312"));
@@ -185,6 +194,7 @@ TEST(Str, ToString) {
 
   std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> results = {
       {"k1", {{"kk1", {"v1", "v2", "v3"}}}}, {"k2", {{"kk2", {"v1", "v2", "v3"}}}}};
+  ASSERT_EQ(R"({"k2":{"kk2":["v1","v2","v3"]},"k1":{"kk1":["v1","v2","v3"]}})", cppcommon::ToString(results));
   spdlog::info("{}", cppcommon::ToString(results));
 }
 
