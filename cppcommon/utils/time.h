@@ -22,29 +22,27 @@ inline auto CurrentTs() {
   return std::chrono::duration_cast<Unit>(d).count();
 }
 
-class ZonedDateTimeInfo {
- public:
-  ZonedDateTimeInfo(std::time_t timestamp, int time_zone_offset = 0) {}
-
-  explicit ZonedDateTimeInfo(int64_t timestamp_s, int time_zone_offset = 0)
-      : ZonedDateTimeInfo(static_cast<std::time_t>(timestamp_s), time_zone_offset) {}
-
- private:
-  std::chrono::zoned_time zoned_time_;
-};
-
 struct DateInfo {
   std::shared_ptr<std::tm> tm;
 
-  // sunday: 0, monday~staurday: 1~6
+  // since sunday, [0, 6]. sunday: 0, monday~staurday: 1~6
   inline int GetWeekDay() { return tm->tm_wday; }
-  // monday~sunday: 0~6
+  // since monday, [0, 6]. monday~sunday: 0~6
   inline int GetWeekDayShift() { return tm->tm_wday == 0 ? 6 : tm->tm_wday - 1; }
+  // since 1900
   inline int GetYear() { return tm->tm_year; }
+  // [0, 365]
   inline int GetYearDay() { return tm->tm_yday; }
+  // [0, 11]
   inline int GetMonth() { return tm->tm_mon; }
+  // [1, 31]
   inline int GetMonthDay() { return tm->tm_mday; }
+  // [0, 23]
   inline int GetHour() { return tm->tm_hour; }
+  // [0, 59]
+  inline int GetMinute() { return tm->tm_min; }
+  // [0, 60]
+  inline int GetSecond() { return tm->tm_sec; }
 
   inline std::string Format(const char* f) {
     std::ostringstream ss;
@@ -61,7 +59,7 @@ struct DateInfo {
     new_tm->tm_min += minutes;
     new_tm->tm_sec += seconds;
 
-    auto tt = std::mktime(new_tm.get());
+    auto tt = timegm(new_tm.get());
     if (tt == -1) {
       throw std::runtime_error("[DateInfo::Apply] make time failed");
     }
@@ -77,7 +75,6 @@ inline DateInfo GetDateInfo(int64_t timestamp_ms = -1, int timezone_offset = 0) 
   auto ts_s = timestamp_ms / 1000 + timezone_offset * 3600;
   auto t = static_cast<std::time_t>(ts_s);
   std::tm* tm = std::gmtime(&t);
-  std::mktime(tm);
   return DateInfo{.tm = std::make_shared<std::tm>(*tm)};
 }
 
