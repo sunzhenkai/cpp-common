@@ -50,7 +50,7 @@ struct DateInfo {
     return ss.str();
   }
 
-  inline DateInfo Apply(int years, int months, int days, int hours, int minutes, int seconds) {
+  inline DateInfo Apply(int years = 0, int months = 0, int days = 0, int hours = 0, int minutes = 0, int seconds = 0) {
     std::shared_ptr<std::tm> new_tm = std::make_shared<std::tm>(*tm);
     new_tm->tm_year += years;
     new_tm->tm_mon += months;
