@@ -41,7 +41,7 @@ class SimpleConfig {
     }
   }
 
-  inline int64_t GetInt64(const std::string &k, int64_t dft) {
+  inline int64_t GetInt64(const std::string &k, int64_t dft) const {
     auto &v = Get(k, "");
     if (v.empty()) return dft;
     try {
@@ -51,7 +51,7 @@ class SimpleConfig {
     return dft;
   }
 
-  inline double GetDouble(const std::string &k, double dft) {
+  inline double GetDouble(const std::string &k, double dft) const {
     auto &v = Get(k, "");
     if (v.empty()) return dft;
     try {
@@ -61,7 +61,7 @@ class SimpleConfig {
     return dft;
   }
 
-  inline bool GetBoolean(const std::string &k, bool dft) {
+  inline bool GetBoolean(const std::string &k, bool dft) const {
     auto &v = Get(k, "");
     if (v.empty()) return dft;
     if (v == "true" || v == "True" || v == "TRUE" || v == "1") {
@@ -73,11 +73,11 @@ class SimpleConfig {
     return dft;
   }
 
-  inline size_t Size() { return data_.size(); }
+  inline size_t Size() const { return data_.size(); }
 
-  inline bool HasError() { return has_errors_; }
+  inline bool HasError() const { return has_errors_; }
 
-  std::string ToString();
+  std::string ToString() const;
 
  private:
   std::unordered_map<std::string, std::string> data_;
