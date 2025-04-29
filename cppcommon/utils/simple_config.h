@@ -70,6 +70,10 @@ class SimpleConfig {
     return dft;
   }
 
+  inline size_t Size() { return data_.size(); }
+
+  inline bool HasError() { return has_errors_; }
+
   std::string ToString();
 
  private:

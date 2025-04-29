@@ -31,3 +31,15 @@ TEST(SimpleConfig, BadCase1) {
   ASSERT_EQ(-1, cfg.GetInt64("nan", -1));
   ASSERT_EQ(":a", cfg.Get("z", ""));
 }
+
+TEST(SimpleConfig, BadCase2) {
+  std::string c = "";
+  cppcommon::SimpleConfig cfg(c, false);
+  ASSERT_EQ(0, cfg.Size());
+  ASSERT_EQ(false, cfg.HasError());
+
+  c = ";;;";
+  cfg = cppcommon::SimpleConfig(c, false);
+  ASSERT_EQ(0, cfg.Size());
+  ASSERT_EQ(false, cfg.HasError());
+}

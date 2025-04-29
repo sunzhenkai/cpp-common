@@ -14,6 +14,7 @@ SimpleConfig::SimpleConfig(const std::string &config, bool quiet) {
   StringSplit(kvs, config, ';');
 
   for (auto &item : kvs) {
+    if (item.empty()) continue;
     auto pos = item.find(':');
     if (pos != std::string::npos) {
       data_[item.substr(0, pos)] = item.substr(pos + 1, item.size() - pos);
