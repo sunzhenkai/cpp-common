@@ -22,6 +22,9 @@ namespace cppcommon {
  *
  * example:
  * - 'a:b;c:1;pi:3.14'
+ *
+ * special examples:
+ * - 'a:a:v;b:' -> ['a' = 'a:v']
  */
 class SimpleConfig {
  public:

@@ -42,4 +42,8 @@ TEST(SimpleConfig, BadCase2) {
   cfg = cppcommon::SimpleConfig(c, false);
   ASSERT_EQ(0, cfg.Size());
   ASSERT_EQ(false, cfg.HasError());
+
+  c = "a:a:v;b:";
+  cfg = cppcommon::SimpleConfig(c, false);
+  std::cout << cfg.ToString() << std::endl;
 }
