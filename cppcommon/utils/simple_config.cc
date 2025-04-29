@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "str.h"
@@ -27,5 +26,5 @@ SimpleConfig::SimpleConfig(const std::string &config, bool quiet) {
   }
 }
 
-std::string SimpleConfig::ToString() { return cppcommon::ToString(data_); }
+std::string SimpleConfig::ToString() const { return cppcommon::ToString(data_); }
 }  // namespace cppcommon
