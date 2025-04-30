@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "cppcommon/utils/to_str.h"
 #include "cppcommon/utils/type_traits.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
@@ -20,11 +21,11 @@ class JsonBuilder {
   JsonBuilder();
 
   // for sequence
-  template <typename V, std::enable_if<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int> = 0>
+  template <typename V, std::enable_if_t<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int> = 0>
   static std::string From(const V &v);
 
   // for k-v containers
-  template <typename V, std::enable_if<cppcommon::is_map_v<V>, int> = 0>
+  template <typename V, std::enable_if_t<cppcommon::is_map_v<V>, int> = 0>
   static std::string From(const V &v);
 
   template <typename K, typename V>
@@ -47,13 +48,6 @@ inline std::string ToJsonString(const rapidjson::Value &value) {
   value.Accept(writer);
   return buffer.GetString();
 }
-
-// template <typename V, std::enable_if<cppcommon::is_string_like_v<V>>>
-// rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc);
-// template <typename V, std::enable_if<cppcommon::is_map_v<V>, int>>
-// rapidjson::Value ToValue(const V &val, rapidjson::Document::AllocatorType &alc);
-// template <typename V, std::enable_if<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int>>
-// rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc);
 
 template <typename V, std::enable_if_t<std::is_arithmetic_v<V> || cppcommon::is_string_literal_v<V>, int> = 0>
 rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
@@ -80,13 +74,17 @@ rapidjson::Value ToValue(const V &val, rapidjson::Document::AllocatorType &alc) 
   rapidjson::Value ret;
   ret.SetObject();
   for (auto &[k, v] : val) {
-    ret.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
+    if constexpr (std::is_arithmetic_v<decltype(k)>) {
+      ret.AddMember(ToValue(std::to_string(k), alc), ToValue(v, alc), alc);
+    } else {
+      ret.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
+    }
   }
   return ret;
 }
 
 // for sequence
-template <typename V, std::enable_if<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int>>
+template <typename V, std::enable_if_t<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int>>
 std::string JsonBuilder::From(const V &v) {
   rapidjson::Document doc;
   doc.SetArray();
@@ -98,13 +96,17 @@ std::string JsonBuilder::From(const V &v) {
 }
 
 // for k-v containers
-template <typename V, std::enable_if<cppcommon::is_map_v<V>, int>>
+template <typename V, std::enable_if_t<cppcommon::is_map_v<V>, int>>
 std::string JsonBuilder::From(const V &val) {
   rapidjson::Document doc;
   doc.SetObject();
   auto &alc = doc.GetAllocator();
   for (auto &[k, v] : val) {
-    doc.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
+    if constexpr (std::is_arithmetic_v<decltype(k)>) {
+      doc.AddMember(ToValue(std::to_string(k), alc), ToValue(v, alc), alc);
+    } else {
+      doc.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
+    }
   }
   return ToJsonString(doc);
 }
@@ -114,8 +116,11 @@ std::string JsonBuilder::From(const K &k, const V &v) {
   rapidjson::Document doc;
   doc.SetObject();
   auto &alc = doc.GetAllocator();
-
-  doc.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
+  if constexpr (std::is_arithmetic_v<decltype(k)>) {
+    doc.AddMember(ToValue(std::to_string(k), alc), ToValue(v, alc), alc);
+  } else {
+    doc.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
+  }
   return ToJsonString(doc);
 }
 
