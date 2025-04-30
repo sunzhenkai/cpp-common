@@ -111,10 +111,22 @@ template <typename T>
 constexpr bool is_basic_or_string_like_v = is_basic_or_string_like<T>::value;
 
 template <typename T>
-struct is_string_like
+struct is_string_like_impl
     : std::disjunction<std::is_same<unwrap_type_t<T>, std::string>, std::is_same<unwrap_type_t<T>, std::string_view>,
                        std::is_same<unwrap_type_t<T>, char *>> {};
 
 template <typename T>
-constexpr bool is_string_like_v = is_string_like<unwrap_type_t<T>>::value;
+constexpr bool is_string_like_v = is_string_like_impl<unwrap_type_t<T>>::value;
+
+template <typename, typename = void>
+struct is_string_literal_impl : std::false_type {};
+
+template <size_t N>
+struct is_string_literal_impl<char[N]> : std::true_type {};
+
+template <typename T>
+struct is_string_literal : is_string_literal_impl<unwrap_type_t<T>> {};
+
+template <typename T>
+constexpr bool is_string_literal_v = is_string_literal_impl<unwrap_type_t<T>>::value;
 }  // namespace cppcommon
