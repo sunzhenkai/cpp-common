@@ -9,56 +9,11 @@
 #include <spdlog/spdlog.h>
 
 #include <cstring>
-#include <sstream>
 #include <string>
-#include <string_view>
-#include <unordered_map>
 #include <vector>
 
 using namespace std::string_view_literals;
 namespace cppcommon {
-inline std::string ToString(int argc, char **argv) {
-  std::stringstream ss;
-  ss << "[";
-  for (int i = 0; i < argc; ++i) {
-    if (i != 0) ss << ",";
-    ss << "\"" << *(argv + i) << "\"";
-  }
-  ss << "]";
-  return ss.str();
-}
-
-template <typename T>
-std::string ToString(const std::vector<T> &v) {
-  std::stringstream ss;
-  ss << "[";
-  for (size_t i = 0; i < v.size(); ++i) {
-    if (i != 0) ss << ",";
-    ss << "\"" << v[i] << "\"";
-  }
-  ss << "]";
-  return ss.str();
-}
-
-template <typename T>
-std::string ToString(const T &v) {
-  std::stringstream ss;
-  ss << '"' << v << '"';
-  return ss.str();
-}
-
-template <typename K, typename V>
-std::string ToString(const std::unordered_map<K, V> &m) {
-  std::stringstream ss;
-  ss << "{";
-  for (auto it = m.begin(); it != m.end(); ++it) {
-    if (it != m.begin()) ss << ",";
-    ss << ToString(it->first) << ":" << ToString(it->second);
-  }
-  ss << "}";
-  return ss.str();
-}
-
 template <typename R, typename D>
 void StringSplit(std::vector<R> &result, const D &data, const char &delimeter, bool ignore_empty = false) {
   result.clear();

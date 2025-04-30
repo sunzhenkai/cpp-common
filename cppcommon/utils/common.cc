@@ -1,5 +1,6 @@
 // sys
 #include <climits>
+#include <random>
 // self
 #include "common.h"
 
@@ -21,4 +22,5 @@ double RandomDouble(const double &min, const double &max) {
   std::uniform_real_distribution<> dist(min, max);
   return dist(gRandomGenerator);
 }
+
 }  // namespace cppcommon

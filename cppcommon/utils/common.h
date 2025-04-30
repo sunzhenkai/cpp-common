@@ -5,8 +5,9 @@
  * @date 2025-03-25 21:50:05
  */
 #pragma once
+#include <chrono>
 #include <exception>
-#include <random>
+#include <string>
 
 namespace cppcommon {
 uint32_t RandomInt(const int &min = 0, const int &max = 0);
