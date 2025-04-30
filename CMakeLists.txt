@@ -12,7 +12,9 @@ endif()
 
 # 3rd packages
 find_package(spdlog CONFIG REQUIRED)
-set(THIRD_LIBRARIES spdlog::spdlog)
+find_package(RapidJSON CONFIG REQUIRED)
+
+set(THIRD_LIBRARIES spdlog::spdlog rapidjson)
 
 include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)

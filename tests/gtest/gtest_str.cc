@@ -182,7 +182,7 @@ TEST(Str, ToString) {
   ASSERT_EQ(R"(["aaaa","bbbb"])", cppcommon::ToString(sv));
   std::vector<std::string_view> svv = {"aaaa"sv, "bbbb"sv};
   ASSERT_EQ(R"(["aaaa","bbbb"])", cppcommon::ToString(svv));
-  std::vector<char *> svc = {"aaaa", "bbbb"};
+  std::vector<const char *> svc = {"aaaa", "bbbb"};
   ASSERT_EQ(R"(["aaaa","bbbb"])", cppcommon::ToString(svc));
 
   spdlog::info("{}", cppcommon::ToString(sv));
