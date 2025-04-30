@@ -150,7 +150,11 @@ void JsonBuilder::Add(const K &k, const JsonBuilder &v) {
 template <typename K, typename S>
 void JsonBuilder::AddJsonStr(const K &k, const S &js) {
   rapidjson::Document nd;
-  nd.Parse(js);
+  if constexpr (std::is_same_v<std::string, unwrap_type_t<S>> || std::is_same_v<std::string_view, unwrap_type_t<S>>) {
+    nd.Parse(js.data(), js.size());
+  } else {
+    nd.Parse(js);
+  }
 
   auto &alc = doc_.GetAllocator();
   rapidjson::Value nv(nd, alc);

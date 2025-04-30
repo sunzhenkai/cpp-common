@@ -4,10 +4,13 @@
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "cppcommon/extends/rapidjson/builder.h"
 #include "gtest/gtest.h"
+
+using namespace std::string_view_literals;
 
 TEST(Json, From) {
   rapidjson::Document doc;
@@ -73,4 +76,9 @@ TEST(Json, Builder) {
   ASSERT_EQ(
       jb2.Build(),
       R"({"hello":"neo","other":{"a":"1","b":1,"cc":[1,2,3],"dd":[1,2,3],"eee":{"1":1},"fff":[1,3,5]},"foo":{"foo":"bar"}})");
+
+  std::string js = R"({"foo":"bar"})";
+  jb2.AddJsonStr("foo", js.c_str());
+  jb2.AddJsonStr("foo", js);
+  jb2.AddJsonStr("foobar", "{}"sv);
 }
