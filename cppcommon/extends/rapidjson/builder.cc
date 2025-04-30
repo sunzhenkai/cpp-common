@@ -1,5 +1,5 @@
 #include "builder.h"
 
 namespace cppcommon {
-JsonBuilder::JsonBuilder() {}
+JsonBuilder::JsonBuilder() { doc_.SetObject(); }
 }  // namespace cppcommon

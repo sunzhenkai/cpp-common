@@ -16,9 +16,36 @@
 #include "rapidjson/writer.h"
 
 namespace cppcommon {
+inline std::string ToJsonString(rapidjson::Document &doc) {
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  doc.Accept(writer);
+  return buffer.GetString();
+}
+
+inline std::string ToJsonString(const rapidjson::Value &value) {
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  value.Accept(writer);
+  return buffer.GetString();
+}
+
 class JsonBuilder {
  public:
   JsonBuilder();
+
+  template <typename K, typename V>
+  void Add(const K &k, const V &v);
+
+  template <typename K>
+  void Add(const K &k, const JsonBuilder &v);
+
+  template <typename K, typename S>
+  void AddJsonStr(const K &k, const S &js);
+
+  inline std::string Build() const { return ToJsonString(doc_); }
+
+  inline const rapidjson::Document &Doc() const { return doc_; }
 
   // for sequence
   template <typename V, std::enable_if_t<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int> = 0>
@@ -35,20 +62,6 @@ class JsonBuilder {
   rapidjson::Document doc_;
 };
 
-inline std::string ToJsonString(rapidjson::Document &doc) {
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  doc.Accept(writer);
-  return buffer.GetString();
-}
-
-inline std::string ToJsonString(const rapidjson::Value &value) {
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  value.Accept(writer);
-  return buffer.GetString();
-}
-
 template <typename V, std::enable_if_t<std::is_arithmetic_v<V> || cppcommon::is_string_literal_v<V>, int> = 0>
 rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
   return rapidjson::Value(v);
@@ -57,6 +70,15 @@ rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
 template <typename V, std::enable_if_t<cppcommon::is_string_like_v<V>, int> = 0>
 rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
   return rapidjson::Value(v.c_str(), v.size(), alc);
+}
+
+template <typename V>
+rapidjson::Value ToKeyValue(const V &k, rapidjson::Document::AllocatorType &alc) {
+  if constexpr (std::is_arithmetic_v<V>) {
+    return ToValue(std::to_string(k), alc);
+  } else {
+    return ToValue(k, alc);
+  }
 }
 
 template <typename V, std::enable_if_t<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int> = 0>
@@ -74,11 +96,7 @@ rapidjson::Value ToValue(const V &val, rapidjson::Document::AllocatorType &alc) 
   rapidjson::Value ret;
   ret.SetObject();
   for (auto &[k, v] : val) {
-    if constexpr (std::is_arithmetic_v<decltype(k)>) {
-      ret.AddMember(ToValue(std::to_string(k), alc), ToValue(v, alc), alc);
-    } else {
-      ret.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
-    }
+    ret.AddMember(ToKeyValue(k, alc), ToValue(v, alc), alc);
   }
   return ret;
 }
@@ -102,11 +120,7 @@ std::string JsonBuilder::From(const V &val) {
   doc.SetObject();
   auto &alc = doc.GetAllocator();
   for (auto &[k, v] : val) {
-    if constexpr (std::is_arithmetic_v<decltype(k)>) {
-      doc.AddMember(ToValue(std::to_string(k), alc), ToValue(v, alc), alc);
-    } else {
-      doc.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
-    }
+    doc.AddMember(ToKeyValue(k, alc), ToValue(v, alc), alc);
   }
   return ToJsonString(doc);
 }
@@ -116,12 +130,30 @@ std::string JsonBuilder::From(const K &k, const V &v) {
   rapidjson::Document doc;
   doc.SetObject();
   auto &alc = doc.GetAllocator();
-  if constexpr (std::is_arithmetic_v<decltype(k)>) {
-    doc.AddMember(ToValue(std::to_string(k), alc), ToValue(v, alc), alc);
-  } else {
-    doc.AddMember(ToValue(k, alc), ToValue(v, alc), alc);
-  }
+  doc.AddMember(ToKeyValue(k, alc), ToValue(v, alc), alc);
   return ToJsonString(doc);
 }
 
+template <typename K, typename V>
+void JsonBuilder::Add(const K &k, const V &v) {
+  auto &alc = doc_.GetAllocator();
+  doc_.AddMember(ToKeyValue(k, alc), ToValue(v, alc), alc);
+}
+
+template <typename K>
+void JsonBuilder::Add(const K &k, const JsonBuilder &v) {
+  auto &alc = doc_.GetAllocator();
+  rapidjson::Value nv(v.Doc(), alc);
+  doc_.AddMember(ToKeyValue(k, alc), nv, alc);
+}
+
+template <typename K, typename S>
+void JsonBuilder::AddJsonStr(const K &k, const S &js) {
+  rapidjson::Document nd;
+  nd.Parse(js);
+
+  auto &alc = doc_.GetAllocator();
+  rapidjson::Value nv(nd, alc);
+  doc_.AddMember(ToKeyValue(k, alc), nv, alc);
+}
 }  // namespace cppcommon
