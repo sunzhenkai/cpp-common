@@ -5,7 +5,6 @@
  * @date 2025-03-25 21:50:05
  */
 #pragma once
-#include <chrono>
 #include <exception>
 #include <string>
 
@@ -32,7 +31,7 @@ inline size_t BKDRHash(const char *str, size_t len) {
   unsigned int seed = 131;
   const char *end = str + len;
   while (str < end) {
-    char ch = (char)*str++;
+    char ch = static_cast<char>(*str++);
     hash = hash * seed + ch;
   }
   return hash;
