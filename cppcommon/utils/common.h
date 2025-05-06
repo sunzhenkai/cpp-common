@@ -5,6 +5,7 @@
  * @date 2025-03-25 21:50:05
  */
 #pragma once
+#include <cstdint>
 #include <exception>
 #include <string>
 
