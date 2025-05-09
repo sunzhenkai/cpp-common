@@ -5,6 +5,8 @@
  * @date 2025-04-25 19:23:12
  */
 #pragma once
+#include <array>
+#include <string>
 #include <type_traits>
 #include <vector>
 
