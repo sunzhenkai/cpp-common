@@ -66,7 +66,7 @@ rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
 
 template <typename V, std::enable_if_t<cppcommon::is_string_like_v<V>, int> = 0>
 rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
-  return rapidjson::Value(v.c_str(), v.size(), alc);
+  return rapidjson::Value(v.data(), v.size(), alc);
 }
 
 template <typename V>
@@ -78,7 +78,9 @@ rapidjson::Value ToKeyValue(const V &k, rapidjson::Document::AllocatorType &alc)
   }
 }
 
-template <typename V, std::enable_if_t<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V>, int> = 0>
+template <typename V,
+          std::enable_if_t<cppcommon::is_container_v<V> && !cppcommon::is_map_v<V> && !cppcommon::is_string_like_v<V>,
+                           int> = 0>
 rapidjson::Value ToValue(const V &v, rapidjson::Document::AllocatorType &alc) {
   rapidjson::Value ret;
   ret.SetArray();

@@ -74,6 +74,8 @@ TEST(Json, Builder) {
   cppcommon::JsonBuilder jb2;
   jb2.Add("hello", "neo");
   jb2.Add("other", jb);
+  std::string_view pisv{"3.14"};
+  jb2.Add("pi", pisv);
   jb2.AddJsonStr("foo", R"({"foo":"bar"})");
 
   std::cout << jb2.Build() << std::endl;
