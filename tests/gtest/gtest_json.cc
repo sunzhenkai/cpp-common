@@ -1,13 +1,17 @@
 #include <rapidjson/document.h>
+#include <spdlog/spdlog.h>
 
 #include <iostream>
 #include <map>
 #include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include "cppcommon/extends/rapidjson/builder.h"
+#include "cppcommon/extends/rapidjson/reader.h"
+#include "cppcommon/utils/to_str.h"
 #include "gtest/gtest.h"
 
 using namespace std::string_view_literals;
@@ -81,4 +85,27 @@ TEST(Json, Builder) {
   jb2.AddJsonStr("foo", js.c_str());
   jb2.AddJsonStr("foo", js);
   jb2.AddJsonStr("foobar", "{}"sv);
+}
+
+TEST(Json, Reader) {
+  auto s =
+      R"({"hello":"neo","other":{"a":"1","b":1,"cc":[1,2,3],"dd":["1","2","3"],"eee":{"1":1},"fff":[1,3,5]},"foo":{"foo":"bar"}})";
+
+  cppcommon::JsonReader jr(s);
+  spdlog::info("HasError: {}", jr.HasError());
+  ASSERT_TRUE(!jr.HasError());
+  spdlog::info("hello: {}", jr.Get<std::string>("default", "hello"));
+  ASSERT_EQ(jr.Get<std::string>("default", "hello"), "neo");
+  ASSERT_EQ(jr.Get<std::string>("default", "hello_no"), "default");
+  ASSERT_EQ(jr.Get<std::string>("default", "other", "a"), "1");
+  ASSERT_EQ(jr.Get<int>(1, "hello", "other", "b"), 1);
+  auto v = jr.Get<std::decay_t<std::vector<int>>>({}, "other", "cc");
+  spdlog::info("{}", cppcommon::ToString(v));
+  ASSERT_EQ(v.size(), 3);
+  ASSERT_EQ(v[2], 3);
+
+  auto vs = jr.Get<std::decay_t<std::vector<std::string>>>({}, "other", "dd");
+  spdlog::info("{}", cppcommon::ToString(vs));
+  ASSERT_EQ(vs.size(), 3);
+  ASSERT_EQ(vs[2], "3");
 }
