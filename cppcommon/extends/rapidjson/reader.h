@@ -19,7 +19,7 @@ class JsonReader {
   bool HasError() const;
 
   template <typename T, typename... Args>
-  T Get(T& res, const T& dft, Args&&... args) const {
+  T Get(const T& dft, Args&&... args) const {
     const rapidjson::Value* node = &doc_;
     return GetValueImpl<T>(node, dft, std::forward<Args>(args)...);
   }
