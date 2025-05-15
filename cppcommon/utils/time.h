@@ -15,11 +15,34 @@
 #include <string>
 
 namespace cppcommon {
+using days = std::chrono::duration<int, std::ratio<86400>>;
+
 template <typename Unit = std::chrono::milliseconds>
 inline auto CurrentTs() {
   auto now = std::chrono::high_resolution_clock::now();
   auto d = now.time_since_epoch();
   return std::chrono::duration_cast<Unit>(d).count();
+}
+
+template <typename U>
+inline int DurationCount(const std::chrono::duration<int64_t>& d) {
+  return static_cast<int>(std::chrono::duration_cast<U>(d).count());
+}
+
+inline int DurationDays(const std::chrono::duration<int64_t>& d) {
+  return static_cast<int>(std::chrono::duration_cast<days>(d).count());
+}
+
+inline int DurationHours(const std::chrono::duration<int64_t>& d) {
+  return static_cast<int>(std::chrono::duration_cast<std::chrono::hours>(d).count());
+}
+
+inline int DurationMinutes(const std::chrono::duration<int64_t>& d) {
+  return static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(d).count());
+}
+
+inline int DurationSeconds(const std::chrono::duration<int64_t>& d) {
+  return static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(d).count());
 }
 
 struct DateInfo {
