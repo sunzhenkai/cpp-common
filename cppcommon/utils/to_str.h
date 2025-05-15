@@ -16,7 +16,7 @@
 #include "cppcommon/utils/type_traits.h"
 
 namespace cppcommon {
-inline std::string ToString(int argc, char** argv) {
+inline std::string ToString(int argc, const char** argv) {
   std::stringstream ss;
   ss << "[";
   for (int i = 0; i < argc; ++i) {
