@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include "cppcommon/utils/str.h"
 #include "cppcommon/utils/to_str.h"
@@ -211,4 +212,10 @@ TEST(StrSplitWithFilter, Badcase) {
   spdlog::info("svs: {}", cppcommon::ToString(sv));
   ASSERT_EQ(sv.size(), 1);
   ASSERT_EQ(sv[0], "106");
+}
+
+TEST(ToString, ConstPP) {
+  std::vector<char *> vc{"a", "b", "c"};
+  spdlog::info("{}", cppcommon::ToString(vc.size(), (char **)vc.data()));
+  spdlog::info("{}", cppcommon::ToString(vc.size(), (const char **)vc.data()));
 }
