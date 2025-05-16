@@ -56,17 +56,17 @@ inline bool IsNumber(const S &str) {
   return true;
 }
 
-template <typename Num>
-std::vector<int> TopNIndex(const std::vector<Num> &nums, size_t n, bool reverse = false) {
+template <typename Campareble>
+std::vector<int> TopNIndex(const std::vector<Campareble> &nums, size_t n, bool reverse = false) {
   std::vector<int> ret;
   ret.reserve(n);
 
-  std::vector<std::pair<Num, int>> num_idxs;
+  std::vector<std::pair<Campareble, int>> num_idxs;
   num_idxs.reserve(nums.size());
   for (size_t i = 0; i < nums.size(); ++i) {
     num_idxs.emplace_back(nums[i], i);
   }
-  auto comp = [&](const std::pair<Num, int> &i, const std::pair<Num, int> &j) {
+  auto comp = [&](const std::pair<Campareble, int> &i, const std::pair<Campareble, int> &j) {
     return (i.first > j.first) && (!reverse);
   };
   std::sort(num_idxs.begin(), num_idxs.end(), comp);
