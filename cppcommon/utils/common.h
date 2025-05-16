@@ -5,9 +5,12 @@
  * @date 2025-03-25 21:50:05
  */
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <exception>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace cppcommon {
 uint32_t RandomInt(const int &min = 0, const int &max = 0);
@@ -51,5 +54,27 @@ inline bool IsNumber(const S &str) {
     }
   }
   return true;
+}
+
+template <typename Num>
+std::vector<int> TopNIndex(const std::vector<Num> &nums, size_t n, bool reverse = false) {
+  std::vector<int> ret;
+  ret.reserve(n);
+
+  std::vector<std::pair<Num, int>> num_idxs;
+  num_idxs.reserve(nums.size());
+  for (size_t i = 0; i < nums.size(); ++i) {
+    num_idxs.emplace_back(nums[i], i);
+  }
+  auto comp = [&](const std::pair<Num, int> &i, const std::pair<Num, int> &j) {
+    return (i.first > j.first) && (!reverse);
+  };
+  std::sort(num_idxs.begin(), num_idxs.end(), comp);
+
+  for (size_t i = 0; i < nums.size() && i < n; ++i) {
+    ret.emplace_back(num_idxs[i].second);
+  }
+
+  return ret;
 }
 }  // namespace cppcommon
