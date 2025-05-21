@@ -215,7 +215,35 @@ TEST(StrSplitWithFilter, Badcase) {
 }
 
 TEST(ToString, ConstPP) {
-  std::vector<char *> vc{"a", "b", "c"};
-  spdlog::info("{}", cppcommon::ToString(vc.size(), (char **)vc.data()));
+  std::string a = "a", b = "b", c = "c";
+  std::vector<char *> vc{a.data(), b.data(), c.data()};
+  spdlog::info("{}", cppcommon::ToString(vc.size(), reinterpret_cast<char **>(vc.data())));
   spdlog::info("{}", cppcommon::ToString(vc.size(), (const char **)vc.data()));
+}
+
+TEST(String, Basic) {
+  std::string s = "app2web";
+  ASSERT_EQ(cppcommon::ToUpper(s), "APP2WEB");
+  spdlog::info("s = {}", s);
+  ASSERT_EQ(cppcommon::ToUpper("app2web"sv), "APP2WEB");
+  spdlog::info("s = {}", s);
+  cppcommon::ToUpper(s.data());
+  spdlog::info("s = {}", s);
+  ASSERT_EQ(s, "APP2WEB");
+
+  ASSERT_TRUE(cppcommon::StartsWith("abc", ""));
+  ASSERT_TRUE(cppcommon::StartsWith("abc", "a"));
+  ASSERT_TRUE(cppcommon::StartsWith("abc", "ab"));
+  ASSERT_TRUE(cppcommon::StartsWith("abc", "abc"));
+  ASSERT_TRUE(!cppcommon::StartsWith("abc", "abcd"));
+  ASSERT_TRUE(cppcommon::StartsWith("", ""));
+  ASSERT_TRUE(!cppcommon::StartsWith("", "a"));
+
+  ASSERT_TRUE(cppcommon::EndsWith("abc", ""));
+  ASSERT_TRUE(cppcommon::EndsWith("abc", "c"));
+  ASSERT_TRUE(cppcommon::EndsWith("abc", "bc"));
+  ASSERT_TRUE(cppcommon::EndsWith("abc", "abc"));
+  ASSERT_TRUE(!cppcommon::EndsWith("abc", "abcd"));
+  ASSERT_TRUE(cppcommon::EndsWith("", ""));
+  ASSERT_TRUE(!cppcommon::EndsWith("", "a"));
 }

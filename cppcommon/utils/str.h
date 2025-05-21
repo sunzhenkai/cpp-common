@@ -56,4 +56,28 @@ void StrSplitWithFilter(std::vector<R> &result, const D &data, const char &delim
     }
   }
 }
+
+inline void ToUpper(char *s) {
+  while ((*s) != '\0') {
+    *s = static_cast<char>(std::toupper(static_cast<unsigned char>(*s)));
+    ++s;
+  }
+}
+
+template <typename S>
+inline std::string ToUpper(const S &src) {
+  std::string result(src.data(), src.size());
+  for (char &ch : result) {
+    ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+  }
+  return result;
+}
+
+inline bool StartsWith(std::string_view str, std::string_view prefix) {
+  return str.size() >= prefix.size() && std::equal(prefix.begin(), prefix.end(), str.begin());
+}
+
+inline bool EndsWith(std::string_view str, std::string_view suffix) {
+  return str.size() >= suffix.size() && std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
+}
 }  // namespace cppcommon
