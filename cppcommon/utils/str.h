@@ -10,9 +10,10 @@
 
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 
-using namespace std::string_view_literals;
+using std::string_view_literals::operator""sv;
 namespace cppcommon {
 template <typename R, typename D>
 void StringSplit(std::vector<R> &result, const D &data, const char &delimeter, bool ignore_empty = false) {
