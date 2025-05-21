@@ -64,11 +64,27 @@ inline void ToUpper(char *s) {
   }
 }
 
+inline void ToLower(char *s) {
+  while ((*s) != '\0') {
+    *s = static_cast<char>(std::tolower(static_cast<unsigned char>(*s)));
+    ++s;
+  }
+}
+
 template <typename S>
 inline std::string ToUpper(const S &src) {
   std::string result(src.data(), src.size());
   for (char &ch : result) {
     ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+  }
+  return result;
+}
+
+template <typename S>
+inline std::string ToLower(const S &src) {
+  std::string result(src.data(), src.size());
+  for (char &ch : result) {
+    ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
   }
   return result;
 }

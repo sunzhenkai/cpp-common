@@ -231,6 +231,15 @@ TEST(String, Basic) {
   spdlog::info("s = {}", s);
   ASSERT_EQ(s, "APP2WEB");
 
+  s = "APP2WEB";
+  ASSERT_EQ(cppcommon::ToLower(s), "app2web");
+  spdlog::info("s = {}", s);
+  ASSERT_EQ(cppcommon::ToLower("APP2WEB"sv), "app2web");
+  spdlog::info("s = {}", s);
+  cppcommon::ToLower(s.data());
+  spdlog::info("s = {}", s);
+  ASSERT_EQ(s, "app2web");
+
   ASSERT_TRUE(cppcommon::StartsWith("abc", ""));
   ASSERT_TRUE(cppcommon::StartsWith("abc", "a"));
   ASSERT_TRUE(cppcommon::StartsWith("abc", "ab"));
