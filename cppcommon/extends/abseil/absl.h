@@ -11,4 +11,6 @@ namespace cppcommon::extends {
   if (auto value = expr; !value.ok()) return value;
 #define ExpectOrRet(expr, status) \
   if (!(expr)) return status;
+#define ExpectOrRetMsg(expr, code, message) \
+  if (!(expr)) return absl::ErrnoToStatus(code, message)
 }  // namespace cppcommon::extends
