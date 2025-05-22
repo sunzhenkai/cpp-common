@@ -38,6 +38,8 @@ T GetRjValue(const rapidjson::Value* node, const T& dft) {
   } else if constexpr (std::is_integral_v<T>) {
     return (node)->IsInt() ? (node)->GetInt() : dft;
   } else if constexpr (std::is_floating_point_v<T>) {
+    // implicit conversion
+    if (node->IsInt()) return node->GetInt();
     return (node)->IsDouble() ? (node)->GetDouble() : dft;
   } else if constexpr (std::is_same_v<T, bool>) {
     return (node)->IsBool() ? (node)->GetBool() : dft;
