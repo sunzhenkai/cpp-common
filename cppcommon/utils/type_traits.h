@@ -20,6 +20,9 @@ struct unwrap_type {
 template <typename T>
 using unwrap_type_t = typename unwrap_type<T>::type;
 
+template <typename T>
+struct always_false : std::false_type {};
+
 /// STL
 template <typename, typename = void>
 struct has_iterator : std::false_type {};
@@ -107,7 +110,8 @@ inline constexpr bool is_container_v = is_container<unwrap_type_t<T>>::value;
 template <typename T>
 struct is_basic_or_string_like
     : std::disjunction<std::is_arithmetic<unwrap_type_t<T>>, std::is_same<unwrap_type_t<T>, std::string>,
-                       std::is_same<unwrap_type_t<T>, std::string_view>, std::is_same<unwrap_type_t<T>, char *>> {};
+                       std::is_same<unwrap_type_t<T>, std::string_view>, std::is_same<unwrap_type_t<T>, char *>,
+                       std::is_same<unwrap_type_t<T>, const char *>> {};
 
 template <typename T>
 constexpr bool is_basic_or_string_like_v = is_basic_or_string_like<T>::value;
@@ -115,7 +119,10 @@ constexpr bool is_basic_or_string_like_v = is_basic_or_string_like<T>::value;
 template <typename T>
 struct is_string_like_impl
     : std::disjunction<std::is_same<unwrap_type_t<T>, std::string>, std::is_same<unwrap_type_t<T>, std::string_view>,
-                       std::is_same<unwrap_type_t<T>, char *>> {};
+                       std::is_same<unwrap_type_t<T>, char *>, std::is_same<unwrap_type_t<T>, const char *>> {};
+
+template <typename T>
+constexpr bool is_string_like = is_string_like_impl<unwrap_type_t<T>>{};
 
 template <typename T>
 constexpr bool is_string_like_v = is_string_like_impl<unwrap_type_t<T>>::value;

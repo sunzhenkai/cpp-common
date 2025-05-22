@@ -11,7 +11,10 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
+
+#include "cppcommon/utils/type_traits.h"
 
 using std::string_view_literals::operator""sv;
 namespace cppcommon {
@@ -95,5 +98,19 @@ inline bool StartsWith(std::string_view str, std::string_view prefix) {
 
 inline bool EndsWith(std::string_view str, std::string_view suffix) {
   return str.size() >= suffix.size() && std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
+}
+
+template <typename T>
+std::enable_if_t<is_string_like_v<T> || is_string_literal_v<T>, bool> IsEmpty(T &val) {
+  using U = unwrap_type_t<T>;
+  if constexpr (std::is_same_v<U, std::string> || std::is_same_v<U, std::string_view>) {
+    return val.empty();
+  } else if constexpr (std::is_same_v<U, char *> || std::is_same_v<U, const char *>) {
+    return val == nullptr || *val == '\0';
+  } else if constexpr (cppcommon::is_string_literal_v<U>) {
+    return val[0] == '\0';
+  } else {
+    static_assert(always_false<T>::value, "Unsupported type");
+  }
 }
 }  // namespace cppcommon

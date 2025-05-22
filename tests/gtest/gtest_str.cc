@@ -256,3 +256,21 @@ TEST(String, Basic) {
   ASSERT_TRUE(cppcommon::EndsWith("", ""));
   ASSERT_TRUE(!cppcommon::EndsWith("", "a"));
 }
+
+TEST(String, IsEmpty) {
+  const char *s1 = nullptr;
+  std::string s2;
+  std::string_view s3;
+  ASSERT_TRUE(cppcommon::IsEmpty(""));
+  ASSERT_TRUE(cppcommon::IsEmpty(s1));
+  ASSERT_TRUE(cppcommon::IsEmpty(s2));
+  ASSERT_TRUE(cppcommon::IsEmpty(s3));
+
+  const char *s21 = "abc";
+  std::string s22 = "abc";
+  std::string_view s23 = "abc";
+  ASSERT_TRUE(!cppcommon::IsEmpty("abc"));
+  ASSERT_TRUE(!cppcommon::IsEmpty(s21));
+  ASSERT_TRUE(!cppcommon::IsEmpty(s22));
+  ASSERT_TRUE(!cppcommon::IsEmpty(s23));
+}
