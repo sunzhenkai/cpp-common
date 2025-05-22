@@ -79,4 +79,18 @@ DECLARE_LOGGER(Record, record, 1024, 5, SPDLOG_LEVEL, GENERAL_LOG_FORMAT);
   SPDLOG_LOGGER_CRITICAL(cppcommon::extends::RecordLogger::GetLogger(), format, ##args); \
   cppcommon::extends::kConsoleLogger->critical(format, ##args);
 #endif  // !RCRITICAL
+
+//< c=console, these logs will be sinked into stdout
+#ifndef CINFO
+#define CINFO(format, args...) cppcommon::extends::kConsoleLogger->info(format, ##args);
+#endif  // !CINFO
+#ifndef CWARN
+#define CWARN(format, args...) cppcommon::extends::kConsoleLogger->warn(format, ##args);
+#endif  // !CWARN
+#ifndef CERROR
+#define CERROR(format, args...) cppcommon::extends::kConsoleLogger->error(format, ##args);
+#endif  // !CERROR
+#ifndef CCRITICAL
+#define CCRITICAL(format, args...) cppcommon::extends::kConsoleLogger->critical(format, ##args);
+#endif  // !CCRITICAL
 }  // namespace cppcommon::extends
