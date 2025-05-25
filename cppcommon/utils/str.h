@@ -117,6 +117,40 @@ std::enable_if_t<is_string_like_v<T> || is_string_literal_v<T>, bool> IsEmpty(T 
 
 inline bool IsSpace(char c) { return std::isspace(c); }
 
+// https://en.wikipedia.org/wiki/Whitespace_character#Unicode
+inline bool IsUnicodeSpace(char32_t code_point) {
+  switch (code_point) {
+    case 0x0009:
+    case 0x000A:
+    case 0x000B:
+    case 0x000C:
+    case 0x000D:
+    case 0x0020:
+    case 0x0085:
+    case 0x00A0:
+    case 0x1680:
+    case 0x2000:
+    case 0x2001:
+    case 0x2002:
+    case 0x2003:
+    case 0x2004:
+    case 0x2005:
+    case 0x2006:
+    case 0x2007:
+    case 0x2008:
+    case 0x2009:
+    case 0x200A:
+    case 0x2028:
+    case 0x2029:
+    case 0x202F:
+    case 0x205F:
+    case 0x3000:
+      return true;
+    default:
+      return false;
+  }
+}
+
 template <typename S>
 inline std::string Trim(const S &s, const std::function<bool(char)> &is_space = IsSpace) {
   if (IsEmpty(s)) return std::string(s);
