@@ -274,3 +274,35 @@ TEST(String, IsEmpty) {
   ASSERT_TRUE(!cppcommon::IsEmpty(s22));
   ASSERT_TRUE(!cppcommon::IsEmpty(s23));
 }
+
+TEST(String, Trim) {
+  spdlog::info("[{}]", cppcommon::Trim("abc"));
+  spdlog::info("[{}]", cppcommon::Trim(" abc "));
+  spdlog::info("[{}]", cppcommon::Trim("\t abc\t "));
+  spdlog::info("[{}]", cppcommon::Trim("\r\t abc\r\n \t"));
+  spdlog::info("[{}]", cppcommon::Trim("\r\t \r\n \t"));
+  spdlog::info("[{}]", cppcommon::Trim(""));
+  spdlog::info("[{}]", cppcommon::Trim("\u00A0"));
+  spdlog::info("[{}]", cppcommon::Trim("\xA0"));
+
+  std::string s = " abc def \t ";
+  spdlog::info("[{}]", cppcommon::Trim(s));
+
+  ASSERT_EQ(cppcommon::Trim("\r\t \r\n \t"), "");
+  ASSERT_EQ(cppcommon::Trim("\r\t abc\r\n \t"), "abc");
+  ASSERT_EQ(cppcommon::Trim(" "), "");
+  ASSERT_EQ(cppcommon::Trim(""), "");
+  ASSERT_EQ(cppcommon::Trim(" abc "), "abc");
+  ASSERT_EQ(cppcommon::Trim(" abc\t"), "abc");
+}
+
+TEST(String, TrimV2) {
+  char s[5] = "acdb";
+  spdlog::info("{} - {}", s, reinterpret_cast<char *>(s));
+  char *s2 = reinterpret_cast<char *>(s);
+  std::string vs = s;
+  std::string vs2 = s2;
+  std::string_view vs3(s2);
+
+  spdlog::info("{} - {} - {} - {}", s2, vs, vs2, vs3);
+}

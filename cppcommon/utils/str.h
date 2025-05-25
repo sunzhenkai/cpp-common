@@ -8,6 +8,7 @@
 // sys
 #include <spdlog/spdlog.h>
 
+#include <cctype>
 #include <cstring>
 #include <string>
 #include <string_view>
@@ -111,6 +112,28 @@ std::enable_if_t<is_string_like_v<T> || is_string_literal_v<T>, bool> IsEmpty(T 
     return val[0] == '\0';
   } else {
     static_assert(always_false<T>::value, "Unsupported type");
+  }
+}
+
+inline bool IsSpace(char c) { return std::isspace(c); }
+
+template <typename S>
+inline std::string Trim(const S &s, const std::function<bool(char)> &is_space = IsSpace) {
+  if (IsEmpty(s)) return std::string(s);
+  using U = unwrap_type_t<S>;
+  if constexpr (std::is_same_v<U, std::string> || std::is_same_v<U, std::string_view>) {
+    size_t l = 0;
+    size_t r = s.size() - 1;
+    while (l <= r && is_space(s[l])) ++l;
+    while (l <= r && is_space(s[r])) --r;
+    if (l > r) return "";
+    return std::string(s.data() + l, r - l + 1);
+  } else if constexpr (std::is_same_v<U, char *> || std::is_same_v<U, const char *>) {
+    return Trim(std::string_view(s), is_space);
+  } else if constexpr (cppcommon::is_string_literal_v<U>) {
+    return Trim(std::string_view(reinterpret_cast<const char *>(s)), is_space);
+  } else {
+    static_assert(always_false<S>::value, "Unsupported type");
   }
 }
 }  // namespace cppcommon
