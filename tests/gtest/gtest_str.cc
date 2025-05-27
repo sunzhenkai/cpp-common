@@ -306,3 +306,29 @@ TEST(String, TrimV2) {
 
   spdlog::info("{} - {} - {} - {}", s2, vs, vs2, vs3);
 }
+
+TEST(String, TrimSuffix) {
+  spdlog::info("{}", cppcommon::TrimSuffix("abc", "c"));
+  spdlog::info("{}", cppcommon::TrimSuffix("abc", "bc"));
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", "c"), "ab");
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", "bc"), "a");
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", "abc"), "");
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", "dabc"), "abc");
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", ""), "abc");
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", "-"), "abc");
+  ASSERT_EQ(cppcommon::TrimSuffix("abc", "e"), "abc");
+}
+
+TEST(String, TrimPrefix) {
+  spdlog::info("{}", cppcommon::TrimPrefix("abc", "a"));
+  spdlog::info("{}", cppcommon::TrimPrefix("abc", "ab"));
+  spdlog::info("{}", cppcommon::StartsWith("abc", "a"));
+
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", "a"), "bc");
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", "ab"), "c");
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", "abc"), "");
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", "abcd"), "abc");
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", ""), "abc");
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", "-"), "abc");
+  ASSERT_EQ(cppcommon::TrimPrefix("abc", "e"), "abc");
+}

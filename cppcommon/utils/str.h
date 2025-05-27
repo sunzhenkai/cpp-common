@@ -170,4 +170,57 @@ inline std::string Trim(const S &s, const std::function<bool(char)> &is_space = 
     static_assert(always_false<S>::value, "Unsupported type");
   }
 }
+
+template <typename S>
+inline size_t StrLength(const S &s) {
+  using U = unwrap_type_t<S>;
+  if constexpr (std::is_same_v<U, std::string> || std::is_same_v<U, std::string_view>) {
+    return s.size();
+  } else if constexpr (std::is_same_v<U, char *> || std::is_same_v<U, const char *>) {
+    return std::string_view(s).size();
+  } else if constexpr (cppcommon::is_string_literal_v<U>) {
+    return std::string_view(reinterpret_cast<const char *>(s)).size();
+  } else {
+    static_assert(always_false<S>::value, "Unsupported type");
+  }
+}
+
+template <typename S, typename F>
+inline std::string TrimSuffix(const S &s, const F &suffix) {
+  if (IsEmpty(s)) return std::string(s);
+  using U = unwrap_type_t<S>;
+  if constexpr (std::is_same_v<U, std::string> || std::is_same_v<U, std::string_view>) {
+    if (EndsWith(s, suffix)) {
+      return std::string(s.data(), s.size() - StrLength(suffix));
+    } else {
+      return std::string(s.data());
+    }
+  } else if constexpr (std::is_same_v<U, char *> || std::is_same_v<U, const char *>) {
+    return TrimSuffix(std::string_view(s), suffix);
+  } else if constexpr (cppcommon::is_string_literal_v<U>) {
+    return TrimSuffix(std::string_view(reinterpret_cast<const char *>(s)), suffix);
+  } else {
+    static_assert(always_false<S>::value, "Unsupported type");
+  }
+}
+
+template <typename S, typename F>
+inline std::string TrimPrefix(const S &s, const F &prefix) {
+  if (IsEmpty(s)) return std::string(s);
+  using U = unwrap_type_t<S>;
+  if constexpr (std::is_same_v<U, std::string> || std::is_same_v<U, std::string_view>) {
+    if (StartsWith(s, prefix)) {
+      auto l = StrLength(prefix);
+      return std::string(s.data() + l, s.size() - l);
+    } else {
+      return std::string(s.data());
+    }
+  } else if constexpr (std::is_same_v<U, char *> || std::is_same_v<U, const char *>) {
+    return TrimPrefix(std::string_view(s), prefix);
+  } else if constexpr (cppcommon::is_string_literal_v<U>) {
+    return TrimPrefix(std::string_view(reinterpret_cast<const char *>(s)), prefix);
+  } else {
+    static_assert(always_false<S>::value, "Unsupported type");
+  }
+}
 }  // namespace cppcommon
