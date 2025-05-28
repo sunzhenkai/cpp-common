@@ -25,6 +25,10 @@ namespace cppcommon {
  *
  * special examples:
  * - 'a:a:v;b:' -> ['a' = 'a:v']
+ *
+ * fallback example:
+ * - 'a:a,*:b' -> ['a' = 'a', '*': b]
+ *   Get("c") -> b
  */
 class SimpleConfig {
  public:
@@ -32,17 +36,21 @@ class SimpleConfig {
 
   inline const std::unordered_map<std::string, std::string> &Data() const { return data_; }
 
-  inline const std::string &Get(const std::string &k, const std::string &dft) const {
+  inline const std::string &Get(const std::string &k, const std::string &dft, bool use_fallback = false) const {
     auto it = data_.find(k);
     if (it != data_.end()) {
       return it->second;
-    } else {
-      return dft;
+    } else if (use_fallback) {
+      auto fbit = data_.find("*");
+      if (fbit != data_.end()) {
+        return fbit->second;
+      }
     }
+    return dft;
   }
 
-  inline int64_t GetInt64(const std::string &k, int64_t dft) const {
-    auto &v = Get(k, "");
+  inline int64_t GetInt64(const std::string &k, int64_t dft, bool use_fallback = false) const {
+    auto &v = Get(k, "", use_fallback);
     if (v.empty()) return dft;
     try {
       return std::stoll(v);
@@ -51,8 +59,8 @@ class SimpleConfig {
     return dft;
   }
 
-  inline double GetDouble(const std::string &k, double dft) const {
-    auto &v = Get(k, "");
+  inline double GetDouble(const std::string &k, double dft, bool use_fallback = false) const {
+    auto &v = Get(k, "", use_fallback);
     if (v.empty()) return dft;
     try {
       return std::stod(v);
@@ -61,8 +69,8 @@ class SimpleConfig {
     return dft;
   }
 
-  inline bool GetBoolean(const std::string &k, bool dft) const {
-    auto &v = Get(k, "");
+  inline bool GetBoolean(const std::string &k, bool dft, bool use_fallback = false) const {
+    auto &v = Get(k, "", use_fallback);
     if (v.empty()) return dft;
     if (v == "true" || v == "True" || v == "TRUE" || v == "1") {
       return true;

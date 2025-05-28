@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 
 TEST(SimpleConfig, Base) {
-  std::string c = "a:1;b:2;pi:3.14";
+  std::string c = "a:1;b:2;pi:3.14;*:123";
   cppcommon::SimpleConfig cfg(c, false);
 
   std::cout << cfg.ToString() << std::endl;
@@ -15,6 +15,9 @@ TEST(SimpleConfig, Base) {
   ASSERT_EQ(3.14, cfg.GetDouble("pi", 0));
   ASSERT_EQ(0, cfg.GetDouble("nan", 0));
   ASSERT_EQ(-1, cfg.GetInt64("nan", -1));
+
+  ASSERT_EQ("123", cfg.Get("no", "", true));
+  ASSERT_EQ(123, cfg.GetInt64("no", 0, true));
 }
 
 TEST(SimpleConfig, BadCase1) {
