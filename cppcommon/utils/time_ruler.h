@@ -4,10 +4,12 @@
  * @author zhenkai.sun
  * @date 2025-04-02 10:18:00
  */
+#pragma once
 
 #include <chrono>
 #include <cstdint>
 #include <sstream>
+#include <string>
 namespace cppcommon {
 class TimeRuler {
  public:
