@@ -8,11 +8,13 @@
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
 
+#include <memory>
 #include <string>
-#include <utility>
+#include <vector>
 
 namespace cppcommon::os {
 enum class StorageService {
+  UNKNOWN,
   OSS,  // aliyun
   S3,   // amazon
   GCS,  // gcp, google cloud storage
@@ -25,13 +27,18 @@ class ObjectStorageTransfor {
     std::string access_key_secret;
     std::string region;
     std::string endpoint;
-    std::string bucket;
+    StorageService provider{StorageService::S3};
   };
 
-  explicit ObjectStorageTransfor(Options &&options) : options_(std::move(options)) {}
+  explicit ObjectStorageTransfor(StorageService provider);
+  explicit ObjectStorageTransfor(Options &&options);
+
+  static Options LoadFromEnv(StorageService provider);
+
+  std::vector<std::string> List(const std::string &bucket, const std::string &path);
 
  private:
-  Aws::S3::S3Client client_;
+  std::shared_ptr<Aws::S3::S3Client> client_;
   Options options_;
 };
 }  // namespace cppcommon::os
