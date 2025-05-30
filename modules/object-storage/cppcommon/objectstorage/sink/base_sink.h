@@ -9,8 +9,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
-#include <filesystem>
-#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <limits>
@@ -29,7 +27,8 @@ template <typename Record>
 class SinkFileSystem {
  public:
   virtual void Open(const std::string &filepath) = 0;
-  virtual void Write(Record &&record) = 0;
+  // @return the number of writted lines
+  virtual int Write(Record &&record) = 0;
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
@@ -37,27 +36,6 @@ class SinkFileSystem {
   static bool IsExists(const std::string &filepath);
   ~SinkFileSystem() { Close(); }
   inline operator bool() { return IsOpen(); }
-};
-
-template <typename Record>
-class LocalSinkFileSystem : public SinkFileSystem<Record> {
- public:
-  void Open(const std::string &filepath) override { ofs_.open(filepath, std::ios::out | std::ios::trunc); }
-  inline void Write(Record &&record) override { ofs_ << record << "\n"; }
-  bool IsOpen() override { return ofs_.is_open(); }
-
-  void Close() override {
-    if (ofs_) ofs_.close();
-  }
-
-  inline void Flush() override {
-    if (ofs_) ofs_.flush();
-  }
-
-  static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
-
- private:
-  std::ofstream ofs_;
 };
 
 template <typename Record, typename FS = SinkFileSystem<Record>>
@@ -149,8 +127,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
     }
 
     if (ofs_) {
-      ofs_->Write(std::forward<Record>(record));
-      state_.current_row_nums++;
+      state_.current_row_nums += ofs_->Write(std::forward<Record>(record));
     }
   }
 }
@@ -211,6 +188,4 @@ std::string BaseSink<Record, FS>::NextFileName() {
     ++state_.file_index;
   }
 }
-
-using LocalBasicSink = BaseSink<std::string, LocalSinkFileSystem<std::string>>;
 }  // namespace cppcommon

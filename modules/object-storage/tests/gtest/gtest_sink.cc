@@ -9,10 +9,12 @@
 #include <spdlog/spdlog.h>
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "arrow/builder.h"
 #include "arrow/record_batch.h"
+#include "cppcommon/objectstorage/api.h"
 #include "cppcommon/utils/os.h"
 #include "gtest/gtest.h"
 
@@ -45,6 +47,13 @@ TEST(Sink, Parquet) {
 
   auto out = arrow::io::FileOutputStream::Open("output.parquet").ValueOrDie();
   parquet::arrow::WriteTable(*tb, arrow::default_memory_pool(), out, 1024);
+}
+
+TEST(Sink, ParquetV2) {
+  cppcommon::LocalArrowTableSink ::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
+  cppcommon::LocalArrowTableSink s(std::move(options));
+  auto tb = GenTable();
+  s.Write(tb);
 }
 
 using arrow::fs::S3FileSystem;
