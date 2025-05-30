@@ -18,7 +18,6 @@
 #include <memory>
 
 #include "arrow/api.h"
-#include "arrow/filesystem/api.h"
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
 namespace cppcommon {

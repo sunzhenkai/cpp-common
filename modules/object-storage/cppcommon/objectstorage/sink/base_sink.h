@@ -38,6 +38,8 @@ class SinkFileSystem {
   inline operator bool() { return IsOpen(); }
 };
 
+using OnRollFileCallback = std::function<void(std::string)>;
+
 template <typename Record, typename FS = SinkFileSystem<Record>>
 class BaseSink {
  public:
@@ -51,6 +53,7 @@ class BaseSink {
     int64_t max_rows_per_file{1000000};
     size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
     std::string suffix{"log"};
+    OnRollFileCallback on_roll_call_back{};  // callling with last filepath when rolling file
   };
 
   struct State {
@@ -75,12 +78,11 @@ class BaseSink {
     cv_.notify_one();
   }
   void Close();
-  void OnRoll(std::function<void(std::string)>);
 
  protected:
   void WriteThreadFunc();
   void RollFile();
-  std::string NextFileName();
+  std::string NextFilePath();
 
  protected:
   Options options_;
@@ -91,6 +93,7 @@ class BaseSink {
   std::queue<Record> queue_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
+  std::string last_filepath_;
 };
 
 template <typename Record, typename FS>
@@ -132,18 +135,24 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::RollFile() {
-  std::string filename = NextFileName();
+  std::string filepath = NextFilePath();
   ofs_ = std::make_shared<FS>();
-  ofs_->Open(filename);
+  ofs_->Open(filepath);
   if (!ofs_->IsOpen()) {
-    throw std::runtime_error("Failed to open file: " + filename);
+    throw std::runtime_error("Failed to open file: " + filepath);
   }
   state_.file_index++;
   state_.current_row_nums = 0;
+  if (!last_filepath_.empty()) {
+    if (options_.on_roll_call_back) {
+      options_.on_roll_call_back(last_filepath_);
+    }
+  }
+  last_filepath_ = filepath;
 }
 
 template <typename Record, typename FS>
-std::string BaseSink<Record, FS>::NextFileName() {
+std::string BaseSink<Record, FS>::NextFilePath() {
   std::string hostname_str;
   if (options_.name_with_hostname) {
     char hostname[128] = {};
