@@ -7,3 +7,5 @@ release
 *.log
 vcpkg_installed
 log
+core_*
+output*

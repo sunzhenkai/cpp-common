@@ -4,6 +4,18 @@
   "homepage": "https://github.com/sunzhenkai/cpp-common",
   "description": "cpp common library",
   "license": "MIT",
+  "default-features": ["objectstorage"],
+  "features": {
+    "objectstorage": {
+      "description": "Object Storage",
+      "dependencies": [
+        {
+          "name": "arrow",
+          "features": ["filesystem", "parquet", "s3"]
+        }
+      ]
+    }
+  },
   "dependencies": [
     "abseil",
     "gtest",
