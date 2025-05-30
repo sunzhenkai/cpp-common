@@ -27,7 +27,7 @@ template <typename Record>
 class SinkFileSystem {
  public:
   virtual void Open(const std::string &filepath) = 0;
-  // @return the number of writted lines
+  // @return number of writted lines
   virtual int Write(Record &&record) = 0;
   virtual bool IsOpen() = 0;
   virtual void Close() {}
@@ -64,7 +64,16 @@ class BaseSink {
 
   ~BaseSink() { Close(); }
 
-  void Write(Record &&record);
+  template <typename T>
+  void Write(T &&record) {
+    {
+      std::unique_lock lock(mutex_);
+      cv_.wait(lock, [&] { return state_.stopped_ || queue_.size() < options_.max_inflight_nums; });
+      if (state_.stopped_) return;
+      queue_.emplace(std::forward<T>(record));
+    }
+    cv_.notify_one();
+  }
   void Close();
   void OnRoll(std::function<void(std::string)>);
 
@@ -83,17 +92,6 @@ class BaseSink {
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
 };
-
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::Write(Record &&record) {
-  {
-    std::unique_lock lock(mutex_);
-    cv_.wait(lock, [&] { return state_.stopped_ || queue_.size() < options_.max_inflight_nums; });
-    if (state_.stopped_) return;
-    queue_.emplace(std::forward<Record>(record));
-  }
-  cv_.notify_one();
-}
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::Close() {
