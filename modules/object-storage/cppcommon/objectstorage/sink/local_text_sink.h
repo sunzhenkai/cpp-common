@@ -11,7 +11,7 @@
 
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
-namespace cppcommon {
+namespace cppcommon::os {
 template <typename Record>
 class LocalSinkFileSystem : public SinkFileSystem<Record> {
  public:
@@ -41,4 +41,4 @@ class LocalTextSinkFileSystem : public LocalSinkFileSystem<std::string> {
 };
 
 using LocalBasicSink = BaseSink<std::string, LocalTextSinkFileSystem>;
-}  // namespace cppcommon
+}  // namespace cppcommon::os

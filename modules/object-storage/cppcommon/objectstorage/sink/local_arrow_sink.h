@@ -21,7 +21,7 @@
 
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
-namespace cppcommon {
+namespace cppcommon::os {
 template <typename Record>
 class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
  public:
@@ -70,4 +70,4 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
 };
 
 using LocalArrowTableSink = BaseSink<std::shared_ptr<arrow::Table>, LocalArrowParquetSinkFileSystem>;
-}  // namespace cppcommon
+}  // namespace cppcommon::os

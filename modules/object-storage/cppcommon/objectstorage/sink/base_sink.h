@@ -21,7 +21,7 @@
 #include <thread>
 #include <utility>
 
-namespace cppcommon {
+namespace cppcommon::os {
 
 template <typename Record>
 class SinkFileSystem {
@@ -195,4 +195,4 @@ std::string BaseSink<Record, FS>::NextFilePath() {
     ++state_.file_index;
   }
 }
-}  // namespace cppcommon
+}  // namespace cppcommon::os

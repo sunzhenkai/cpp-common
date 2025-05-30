@@ -18,6 +18,9 @@
 #include "cppcommon/utils/os.h"
 #include "gtest/gtest.h"
 
+using namespace cppcommon;
+using namespace cppcommon::os;
+
 std::shared_ptr<arrow::RecordBatch> GenRecordBatch() {
   arrow::StringBuilder sb_a;
   arrow::StringBuilder sb_b;
@@ -50,8 +53,8 @@ TEST(Sink, Parquet) {
 }
 
 TEST(Sink, ParquetV2) {
-  cppcommon::LocalArrowTableSink ::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
-  cppcommon::LocalArrowTableSink s(std::move(options));
+  LocalArrowTableSink ::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
+  LocalArrowTableSink s(std::move(options));
   auto tb = GenTable();
   s.Write(tb);
 }
@@ -64,11 +67,11 @@ TEST(Sink, OSS) {
   auto tb = GenTable();
   spdlog::info("{}", tb->ToString());
 
-  auto ak = cppcommon::GetEnv("OSS_ACCESS_KEY_ID", "");
-  auto sk = cppcommon::GetEnv("OSS_ACCESS_KEY_SECRET", "");
-  auto region = cppcommon::GetEnv("OSS_REGION", "");
-  auto endpoint = cppcommon::GetEnv("OSS_ENDPOINT", "");
-  auto bucket = cppcommon::GetEnv("OSS_BUCKET", "");
+  auto ak = GetEnv("OSS_ACCESS_KEY_ID", "");
+  auto sk = GetEnv("OSS_ACCESS_KEY_SECRET", "");
+  auto region = GetEnv("OSS_REGION", "");
+  auto endpoint = GetEnv("OSS_ENDPOINT", "");
+  auto bucket = GetEnv("OSS_BUCKET", "");
   spdlog::info("{}, {}, {}, {}, {}", ak, sk, region, endpoint, bucket);
 
   S3Options options = S3Options::FromAccessKey(ak, sk);
