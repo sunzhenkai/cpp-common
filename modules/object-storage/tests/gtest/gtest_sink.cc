@@ -65,7 +65,7 @@ TEST(Sink, OSS) {
   S3Options options = S3Options::FromAccessKey(ak, sk);
   options.region = region;
   options.endpoint_override = endpoint;
-  options.scheme = "https";
+  options.scheme = "http";
   options.force_virtual_addressing = true;
 
   {
