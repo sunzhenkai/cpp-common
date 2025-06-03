@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <string>
 // self
 #include "os.h"
 
@@ -11,4 +12,4 @@ std::string GetEnv(const std::string &key, const std::string &dft) {
     return value;
   }
 }
-} // namespace cppcommon
+}  // namespace cppcommon

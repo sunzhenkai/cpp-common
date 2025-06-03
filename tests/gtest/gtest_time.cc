@@ -17,6 +17,7 @@ TEST(Time, Weekday) {
 
 TEST(Time, Apply) {
   auto di = cppcommon::GetDateInfo(1408291199000);
+  std::cout << "Year=" << di.GetHumanYear() << std::endl;
   // 2014-08-17 15-59-59
   std::cout << di.Format("%Y-%m-%d %H-%M-%S") << std::endl;
   auto ndi = di.Apply(0, 0, 0, -1, 0, 0);

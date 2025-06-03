@@ -24,6 +24,8 @@ inline auto CurrentTs() {
   return std::chrono::duration_cast<Unit>(d).count();
 }
 
+inline auto CurrentTsMs() { return CurrentTs<std::chrono::milliseconds>(); }
+
 template <typename U>
 inline int DurationCount(const std::chrono::duration<int64_t>& d) {
   return static_cast<int>(std::chrono::duration_cast<U>(d).count());
@@ -54,10 +56,13 @@ struct DateInfo {
   inline int GetWeekDayShift() { return tm->tm_wday == 0 ? 6 : tm->tm_wday - 1; }
   // since 1900
   inline int GetYear() { return tm->tm_year; }
+  inline int GetHumanYear() { return 1900 + tm->tm_year; }
   // [0, 365]
   inline int GetYearDay() { return tm->tm_yday; }
   // [0, 11]
   inline int GetMonth() { return tm->tm_mon; }
+  // [1, 12]
+  inline int GetHumanMonth() { return tm->tm_mon + 1; }
   // [1, 31]
   inline int GetMonthDay() { return tm->tm_mday; }
   // [0, 23]
