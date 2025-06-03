@@ -162,11 +162,10 @@ void BaseSink<Record, FS>::RollFile() {
   }
   rotated_files_.push(filepath);
   // checking max backup files
-  if (options_.max_backup_files > 0 && static_cast<int>(rotated_files_.size()) > options_.max_backup_files) {
+  while (options_.max_backup_files > 0 && static_cast<int>(rotated_files_.size()) > options_.max_backup_files) {
     auto oldest_fp = rotated_files_.front();
     rotated_files_.pop();
-    spdlog::info("the number of backup files exceed the limit . [max_backup={}, remove_file={}]",
-                 options_.max_backup_files, oldest_fp);
+    spdlog::info("backup files exceeds the limit . [limit={}, remove={}]", options_.max_backup_files, oldest_fp);
     if (!std::filesystem::remove(oldest_fp)) {
       spdlog::error("remove rotated log file failed. [file={}]", oldest_fp);
     }
