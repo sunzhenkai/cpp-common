@@ -28,3 +28,20 @@ TEST(Sink, BaseV2) {
   s.Write("b");
   s.Write("c");
 }
+
+TEST(Sink, BaseV3) {
+  LocalBasicSink::Options options{.name = "runtime",
+                                  .is_rotate = true,
+                                  .max_backup_files = 3,
+                                  .max_rows_per_file = 1,
+                                  .on_roll_call_back = [](const std::string &fn) { spdlog::info("rollfile: {}", fn); }};
+  LocalBasicSink s(std::move(options));
+  s.Write("a");
+  s.Write("b");
+  s.Write("c");
+  s.Write("d");
+  s.Write("e");
+  s.Write("f");
+  s.Write("g");
+  s.Write("h");
+}

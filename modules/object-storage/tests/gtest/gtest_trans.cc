@@ -1,6 +1,7 @@
 #include <alibabacloud/oss/OssClient.h>
 
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -43,4 +44,13 @@ TEST(Trans, Log) {
   s.Write("c");
 
   AlibabaCloud::OSS::ShutdownSdk();
+}
+
+std::shared_ptr<arrow::Table> GenTable();
+
+TEST(Trans, Arrow) {
+  LocalArrowTableSink::Options options{.name = "table", .is_rotate = true, .max_rows_per_file = 2, .suffix = "parquet"};
+  LocalArrowTableSink s(std::move(options));
+  s.Write(GenTable());
+  s.Write(GenTable());
 }

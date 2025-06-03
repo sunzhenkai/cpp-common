@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "arrow/record_batch.h"
+#include "cppcommon/objectstorage/sink/base_sink.h"
 #include "cppcommon/objectstorage/sink/local_arrow_sink.h"
 #include "cppcommon/utils/os.h"
 #include "gtest/gtest.h"

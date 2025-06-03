@@ -9,6 +9,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <iomanip>
 #include <limits>
@@ -20,6 +21,8 @@
 #include <string>
 #include <thread>
 #include <utility>
+
+#include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
 
@@ -72,7 +75,7 @@ class BaseSink {
     Close();
     ofs_->Close();
     if (options_.on_roll_call_back) {
-      options_.on_roll_call_back(last_filepath_);
+      options_.on_roll_call_back(rotated_files_.front());
     }
   }
 
@@ -102,7 +105,7 @@ class BaseSink {
   std::queue<Record> queue_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
-  std::string last_filepath_;
+  std::queue<std::string> rotated_files_{};
 };
 
 template <typename Record, typename FS>
@@ -152,12 +155,22 @@ void BaseSink<Record, FS>::RollFile() {
   }
   state_.file_index++;
   state_.current_row_nums = 0;
-  if (!last_filepath_.empty()) {
+  if (!rotated_files_.empty()) {
     if (options_.on_roll_call_back) {
-      options_.on_roll_call_back(last_filepath_);
+      options_.on_roll_call_back(rotated_files_.front());
     }
   }
-  last_filepath_ = filepath;
+  rotated_files_.push(filepath);
+  // checking max backup files
+  if (options_.max_backup_files > 0 && static_cast<int>(rotated_files_.size()) > options_.max_backup_files) {
+    auto oldest_fp = rotated_files_.front();
+    rotated_files_.pop();
+    spdlog::info("the number of backup files exceed the limit . [max_backup={}, remove_file={}]",
+                 options_.max_backup_files, oldest_fp);
+    if (!std::filesystem::remove(oldest_fp)) {
+      spdlog::error("remove rotated log file failed. [file={}]", oldest_fp);
+    }
+  }
 }
 
 template <typename Record, typename FS>
