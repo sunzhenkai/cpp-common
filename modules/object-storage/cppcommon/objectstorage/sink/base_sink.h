@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <unistd.h>
+
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
