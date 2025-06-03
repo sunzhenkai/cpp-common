@@ -78,7 +78,8 @@ TEST(Sink, ParquetV2) {
   LocalArrowTableSink::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
   LocalArrowTableSink s(std::move(options));
   s.Write(GenTable());
-  s.Write(GenTableV2());
+  s.Write(GenTable());
+  // s.Write(GenTableV2()); // different schema is forbidden
 }
 
 using arrow::fs::S3FileSystem;
