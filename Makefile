@@ -17,3 +17,6 @@ test:
 test-all:
 	@./build/tests/gtest_main #--gtest_filter="*"
 
+os-test:
+	@./build/modules/object-storage/tests/os_gtest_main --gtest_filter=$(cases)
+
