@@ -1,4 +1,4 @@
-set(OBJECT_STORAGE_LIB object-storage)
+set(OBJECT_STORAGE_LIB objectstorage)
 # 3rd packages
 find_package(spdlog CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
