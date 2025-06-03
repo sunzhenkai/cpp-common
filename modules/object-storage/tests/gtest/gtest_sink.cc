@@ -38,8 +38,31 @@ std::shared_ptr<arrow::RecordBatch> GenRecordBatch() {
   return arrow::RecordBatch::Make(schema, 2, arrays);
 }
 
+std::shared_ptr<arrow::RecordBatch> GenRecordBatchV2() {
+  arrow::StringBuilder sb_a;
+  arrow::StringBuilder sb_b;
+
+  auto s = sb_a.Append("a2_1");
+  s = sb_a.Append("a2_2");
+  s = sb_b.Append("b2_1");
+  s = sb_b.Append("b2_2");
+
+  std::vector<std::shared_ptr<arrow::Array>> arrays;
+  arrays.resize(2);
+  s = sb_a.Finish(&arrays[0]);
+  s = sb_b.Finish(&arrays[1]);
+
+  auto schema = arrow::schema({arrow::field("a", arrow::utf8()), arrow::field("b2", arrow::utf8())});
+  return arrow::RecordBatch::Make(schema, 2, arrays);
+}
+
 std::shared_ptr<arrow::Table> GenTable() {
   auto r = arrow::Table::FromRecordBatches({GenRecordBatch()});
+  return r.ValueOrDie();
+}
+
+std::shared_ptr<arrow::Table> GenTableV2() {
+  auto r = arrow::Table::FromRecordBatches({GenRecordBatchV2()});
   return r.ValueOrDie();
 }
 
@@ -52,10 +75,10 @@ TEST(Sink, Parquet) {
 }
 
 TEST(Sink, ParquetV2) {
-  LocalArrowTableSink ::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
+  LocalArrowTableSink::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
   LocalArrowTableSink s(std::move(options));
-  auto tb = GenTable();
-  s.Write(tb);
+  s.Write(GenTable());
+  s.Write(GenTableV2());
 }
 
 using arrow::fs::S3FileSystem;

@@ -71,7 +71,9 @@ class BaseSink {
   ~BaseSink() {
     Close();
     ofs_->Close();
-    options_.on_roll_call_back(last_filepath_);
+    if (options_.on_roll_call_back) {
+      options_.on_roll_call_back(last_filepath_);
+    }
   }
 
   template <typename T>
