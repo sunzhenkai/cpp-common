@@ -12,7 +12,8 @@
         {
           "name": "arrow",
           "features": ["filesystem", "parquet", "s3"]
-        }
+        },
+        "aliyun-oss-cpp-sdk"
       ]
     }
   },

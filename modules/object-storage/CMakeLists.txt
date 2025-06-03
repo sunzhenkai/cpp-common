@@ -4,10 +4,12 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 find_package(Arrow CONFIG REQUIRED)
 find_package(Parquet CONFIG REQUIRED)
+find_package(unofficial-aliyun-oss-cpp-sdk CONFIG REQUIRED)
 
 set(OS_THIRD_LIBRARIES
     spdlog::spdlog
     absl::status
+    unofficial::aliyun-oss-cpp-sdk::cpp-sdk
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Arrow::arrow_static,Arrow::arrow_shared>"
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Parquet::parquet_static,Parquet::parquet_shared>"
 )
