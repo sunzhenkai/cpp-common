@@ -34,7 +34,10 @@ class SinkFileSystem {
   virtual void Flush() {}
 
   static bool IsExists(const std::string &filepath);
-  ~SinkFileSystem() { Close(); }
+  ~SinkFileSystem() {
+    Flush();
+    Close();
+  }
   inline operator bool() { return IsOpen(); }
 };
 
@@ -65,7 +68,11 @@ class BaseSink {
   explicit BaseSink(Options &&options)
       : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
-  ~BaseSink() { Close(); }
+  ~BaseSink() {
+    Close();
+    ofs_->Close();
+    options_.on_roll_call_back(last_filepath_);
+  }
 
   template <typename T>
   void Write(T &&record) {

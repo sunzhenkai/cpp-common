@@ -12,9 +12,8 @@
 #include <utility>
 #include <vector>
 
-#include "arrow/builder.h"
 #include "arrow/record_batch.h"
-#include "cppcommon/objectstorage/api.h"
+#include "cppcommon/objectstorage/sink/local_arrow_sink.h"
 #include "cppcommon/utils/os.h"
 #include "gtest/gtest.h"
 
@@ -25,15 +24,15 @@ std::shared_ptr<arrow::RecordBatch> GenRecordBatch() {
   arrow::StringBuilder sb_a;
   arrow::StringBuilder sb_b;
 
-  sb_a.Append("a_1");
-  sb_a.Append("a_2");
-  sb_b.Append("b_1");
-  sb_b.Append("b_2");
+  auto s = sb_a.Append("a_1");
+  s = sb_a.Append("a_2");
+  s = sb_b.Append("b_1");
+  s = sb_b.Append("b_2");
 
   std::vector<std::shared_ptr<arrow::Array>> arrays;
   arrays.resize(2);
-  sb_a.Finish(&arrays[0]);
-  sb_b.Finish(&arrays[1]);
+  s = sb_a.Finish(&arrays[0]);
+  s = sb_b.Finish(&arrays[1]);
 
   auto schema = arrow::schema({arrow::field("a", arrow::utf8()), arrow::field("b", arrow::utf8())});
   return arrow::RecordBatch::Make(schema, 2, arrays);
@@ -49,7 +48,7 @@ TEST(Sink, Parquet) {
   spdlog::info("{}", tb->ToString());
 
   auto out = arrow::io::FileOutputStream::Open("output.parquet").ValueOrDie();
-  parquet::arrow::WriteTable(*tb, arrow::default_memory_pool(), out, 1024);
+  auto s = parquet::arrow::WriteTable(*tb, arrow::default_memory_pool(), out, 1024);
 }
 
 TEST(Sink, ParquetV2) {
@@ -63,7 +62,7 @@ using arrow::fs::S3FileSystem;
 using arrow::fs::S3Options;
 TEST(Sink, OSS) {
   auto global_options = arrow::fs::S3GlobalOptions::Defaults();
-  arrow::fs::InitializeS3(global_options);
+  auto s = arrow::fs::InitializeS3(global_options);
   auto tb = GenTable();
   spdlog::info("{}", tb->ToString());
 
@@ -84,6 +83,7 @@ TEST(Sink, OSS) {
     std::shared_ptr<S3FileSystem> fs = S3FileSystem::Make(options).ValueOrDie();
     auto outpath = fmt::format("{}/output.parquet", bucket);
     auto out = fs->OpenOutputStream(outpath).ValueOrDie();
-    parquet::arrow::WriteTable(*tb, arrow::default_memory_pool(), out, 1024);
+    auto s = parquet::arrow::WriteTable(*tb, arrow::default_memory_pool(), out, 1024);
+    spdlog::info("{}", s.ToString());
   }
 }
