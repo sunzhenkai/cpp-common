@@ -13,7 +13,12 @@
           "name": "arrow",
           "features": ["filesystem", "parquet", "s3"]
         },
-        "aliyun-oss-cpp-sdk"
+        "aliyun-oss-cpp-sdk",
+        {
+          "name": "google-cloud-cpp",
+          "default-features": false,
+          "features": ["storage"]
+        }
       ]
     }
   },
