@@ -84,6 +84,7 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
     if (s.ok()) {
       return record->num_rows();
     } else {
+      spdlog::error("write arrow::Table failed. [error={}]", s.ToString());
       return 0;
     }
   }
@@ -105,6 +106,7 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
     if (s.ok()) {
       return record->num_rows();
     } else {
+      spdlog::error("write arrow::RecordBatch failed. [error={}]", s.ToString());
       return 0;
     }
   }

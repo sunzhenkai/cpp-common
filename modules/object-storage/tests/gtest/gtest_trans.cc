@@ -31,7 +31,7 @@ TEST(Trans, Log) {
   auto tr = NewObjectTransfor(ServiceProvider::OSS);
 
   LocalBasicSink::Options options{
-      .name = "runtime", .is_rotate = true, .max_rows_per_file = 2, .on_roll_call_back = [&](const std::string &fn) {
+      .name = "runtime", .is_rotate = true, .max_rows_per_file = 2, .on_roll_callback = [&](const std::string &fn) {
         spdlog::info("rollfile: {}", fn);
         auto pr = tr->Upload(bucket, "test/upload/abc", fn);
         spdlog::info("upload result: {}", pr.ToString());

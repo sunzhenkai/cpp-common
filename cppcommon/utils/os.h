@@ -5,6 +5,7 @@
  * @date 2025-03-19 15:09:01
  */
 #pragma once
+#include <filesystem>
 #include <sstream>
 #include <string>
 
@@ -49,5 +50,10 @@ inline std::string GetDatedFilePath(int64_t ts_ms, const std::string &filename, 
 inline std::string GetDatedFilePath(const std::string &filename, const std::string &prefix, int timezone_offset = 0,
                                     bool year = true, bool month = true, bool day = true, bool hour = true) {
   return GetDatedFilePath(CurrentTsMs(), filename, prefix, timezone_offset, year, month, day, hour);
+}
+
+template <typename S>
+inline std::string GetFileName(const S &file_path) {
+  return std::filesystem::path(file_path).filename().string();
 }
 }  // namespace cppcommon

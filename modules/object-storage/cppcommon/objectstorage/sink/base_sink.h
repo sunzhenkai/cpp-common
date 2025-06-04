@@ -24,6 +24,7 @@
 #include <thread>
 #include <utility>
 
+#include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
@@ -56,12 +57,13 @@ class BaseSink {
     std::string path{""};
     bool name_with_date{false};
     bool name_with_hostname{false};
+    bool name_with_timestamp{false};
     bool is_rotate{true};
     int max_backup_files{-1};  // -1: unlimited
     int64_t max_rows_per_file{1000000};
     size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
     std::string suffix{"log"};
-    OnRollFileCallback on_roll_call_back{};  // callling with last filepath when rolling file
+    OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
   };
 
   struct State {
@@ -78,8 +80,8 @@ class BaseSink {
     if (ofs_) {
       ofs_->Close();
     }
-    if (options_.on_roll_call_back && !rotated_files_.empty()) {
-      options_.on_roll_call_back(rotated_files_.front());
+    if (options_.on_roll_callback && !rotated_files_.empty()) {
+      options_.on_roll_callback(rotated_files_.back());
     }
   }
 
@@ -152,6 +154,9 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::RollFile() {
   std::string filepath = NextFilePath();
+  if (ofs_) {
+    ofs_->Close();
+  }
   ofs_ = std::make_shared<FS>();
   ofs_->Open(filepath);
   if (!ofs_->IsOpen()) {
@@ -160,8 +165,8 @@ void BaseSink<Record, FS>::RollFile() {
   state_.file_index++;
   state_.current_row_nums = 0;
   if (!rotated_files_.empty()) {
-    if (options_.on_roll_call_back) {
-      options_.on_roll_call_back(rotated_files_.front());
+    if (options_.on_roll_callback) {
+      options_.on_roll_callback(rotated_files_.back());
     }
   }
   rotated_files_.push(filepath);
@@ -207,6 +212,9 @@ std::string BaseSink<Record, FS>::NextFilePath() {
     }
     if (!date_str.empty()) {
       filepath << "_" << date_str;
+    }
+    if (options_.name_with_timestamp) {
+      filepath << "_" << cppcommon::CurrentTsMs();
     }
     if (options_.is_rotate) {
       filepath << "_" << state_.file_index;
