@@ -24,6 +24,7 @@
 #include <thread>
 #include <utility>
 
+#include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
@@ -56,6 +57,7 @@ class BaseSink {
     std::string path{""};
     bool name_with_date{false};
     bool name_with_hostname{false};
+    bool name_with_timestamp{false};
     bool is_rotate{true};
     int max_backup_files{-1};  // -1: unlimited
     int64_t max_rows_per_file{1000000};
@@ -79,7 +81,7 @@ class BaseSink {
       ofs_->Close();
     }
     if (options_.on_roll_callback && !rotated_files_.empty()) {
-      options_.on_roll_callback(rotated_files_.front());
+      options_.on_roll_callback(rotated_files_.back());
     }
   }
 
@@ -164,7 +166,7 @@ void BaseSink<Record, FS>::RollFile() {
   state_.current_row_nums = 0;
   if (!rotated_files_.empty()) {
     if (options_.on_roll_callback) {
-      options_.on_roll_callback(rotated_files_.front());
+      options_.on_roll_callback(rotated_files_.back());
     }
   }
   rotated_files_.push(filepath);
@@ -210,6 +212,9 @@ std::string BaseSink<Record, FS>::NextFilePath() {
     }
     if (!date_str.empty()) {
       filepath << "_" << date_str;
+    }
+    if (options_.name_with_timestamp) {
+      filepath << "_" << cppcommon::CurrentTsMs();
     }
     if (options_.is_rotate) {
       filepath << "_" << state_.file_index;

@@ -55,11 +55,15 @@ std::vector<std::string> OssStorageProvider::List(const std::string &bucket, con
 
 absl::Status OssStorageProvider::Upload(const std::string &bucket, const std::string &object_key,
                                         const std::string &local_file_path) {
-  auto outcome = client_->PutObject(bucket, object_key, local_file_path);
-  if (!outcome.isSuccess()) {
-    return absl::InternalError(
-        absl::StrFormat("OSS Upload failed: code=%s, message=%s", outcome.error().Code(), outcome.error().Message()));
+  try {
+    auto outcome = client_->PutObject(bucket, object_key, local_file_path);
+    if (!outcome.isSuccess()) {
+      return absl::InternalError(
+          absl::StrFormat("OSS Upload failed: code=%s, message=%s", outcome.error().Code(), outcome.error().Message()));
+    }
+    return absl::OkStatus();
+  } catch (const std::exception &e) {
+    return absl::InternalError(e.what());
   }
-  return absl::OkStatus();
 }
 }  // namespace cppcommon::os
