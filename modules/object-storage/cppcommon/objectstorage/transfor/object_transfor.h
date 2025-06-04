@@ -29,7 +29,6 @@ inline std::shared_ptr<StorageProvider> NewObjectTransfor(ServiceProvider provid
       return std::shared_ptr<StorageProvider>(new S3StorageProvider());
     case ServiceProvider::GCS:
       return std::shared_ptr<StorageProvider>(new GcsStorageProvider());
-
     default:
       throw std::runtime_error("unsupported storage service provider");
   }
