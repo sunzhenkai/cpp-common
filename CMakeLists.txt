@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-Wall)
 include(GNUInstallDirs) # CMAKE_INSTALL_INCLUDEDIR / CMAKE_INSTALL_LIBDIR / ...
-option(WITH_OBJECT_STORAGE "build object storage" ON)
+option(WITH_OBJECT_STORAGE "build object storage" OFF)
 
 if(BUILD_TESTING)
   # set testing install prefix
@@ -16,7 +16,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(RapidJSON CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 
-set(THIRD_LIBRARIES spdlog::spdlog rapidjson absl::status)
+set(THIRD_LIBRARIES spdlog::spdlog rapidjson absl::status absl::statusor)
 
 include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)

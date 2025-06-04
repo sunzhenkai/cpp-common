@@ -50,7 +50,7 @@ S3StorageProvider::S3StorageProvider(StorageProviderOptions &&options) {
 
 S3StorageProvider::S3StorageProvider() : S3StorageProvider(GetS3OptionsFromEnv()) {}
 
-std::vector<std::string> S3StorageProvider::List(const std::string &bucket, const std::string &path) {
+absl::StatusOr<FileList> S3StorageProvider::List(const std::string &bucket, const std::string &path) {
   Aws::S3::Model::ListObjectsRequest request;
   request.WithBucket(bucket).WithPrefix(path).WithDelimiter("/");
 
@@ -120,7 +120,7 @@ absl::Status S3StorageProvider::DownloadFile(const TransferMeta &m) {
   return absl::OkStatus();
 }
 
-std::vector<std::filesystem::path> S3StorageProvider::Download(const TransferMeta &meta) {
+absl::StatusOr<FilePathList> S3StorageProvider::Download(const TransferMeta &meta) {
   Expect(client_, "s3 client not inited");
   std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
   std::vector<std::filesystem::path> result;

@@ -23,7 +23,7 @@ GcsStorageProvider::GcsStorageProvider(StorageProviderOptions &&options) {
 
 GcsStorageProvider::GcsStorageProvider() : GcsStorageProvider(StorageProviderOptions{}) {}
 
-std::vector<std::string> GcsStorageProvider::List(const std::string &bucket, const std::string &path) {
+absl::StatusOr<FileList> GcsStorageProvider::List(const std::string &bucket, const std::string &path) {
   std::vector<std::string> keys;
   for (auto &&object_metadata : client_->ListObjects(bucket, gcs::Prefix(path))) {
     if (!object_metadata) {
@@ -74,7 +74,7 @@ absl::Status GcsStorageProvider::DownloadFile(const TransferMeta &m) {
   return absl::OkStatus();
 }
 
-std::vector<std::filesystem::path> GcsStorageProvider::Download(const TransferMeta &meta) {
+absl::StatusOr<FilePathList> GcsStorageProvider::Download(const TransferMeta &meta) {
   std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
   std::vector<std::filesystem::path> result;
   // list files

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "cppcommon/extends/abseil/absl.h"
 #include "cppcommon/extends/fmt/fmt.h"
 
@@ -35,12 +36,15 @@ struct TransferMeta {
 };
 
 namespace fs = std::filesystem;
+using FileList = std::vector<std::string>;
+using FilePathList = std::vector<std::filesystem::path>;
+
 class StorageProvider {
  public:
-  virtual std::vector<std::string> List(const std::string &bucket, const std::string &path) = 0;
+  virtual absl::StatusOr<FileList> List(const std::string &bucket, const std::string &path) = 0;
   virtual absl::Status Upload(const TransferMeta &meta) = 0;
   virtual absl::Status DownloadFile(const TransferMeta &meta) = 0;
-  virtual std::vector<std::filesystem::path> Download(const TransferMeta &meta) = 0;
+  virtual absl::StatusOr<FilePathList> Download(const TransferMeta &meta) = 0;
 
  protected:
   absl::Status EnsureLocalPath(const fs::path &p, bool overwrite = false) {

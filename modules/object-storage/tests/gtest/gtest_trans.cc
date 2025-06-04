@@ -19,7 +19,7 @@ TEST(Trans, OSS) {
   std::string bucket = std::getenv("OSS_BUCKET");
   auto tr = NewObjectTransfor(ServiceProvider::OSS);
   auto files = tr->List(bucket, "");
-  spdlog::info("objects: {}", ToString(files));
+  spdlog::info("objects: {}", ToString(files.value()));
 
   auto pr = tr->Upload({bucket, "test/upload/LICENSE", "LICENSE"});
   spdlog::info("upload result: {}", pr.ToString());

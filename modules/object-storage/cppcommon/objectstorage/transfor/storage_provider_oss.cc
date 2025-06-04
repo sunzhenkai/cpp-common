@@ -40,7 +40,7 @@ OssStorageProvider::OssStorageProvider(StorageProviderOptions &&options) {
 
 OssStorageProvider::OssStorageProvider() : OssStorageProvider(GetOssOptionsFromEnv()) {}
 
-std::vector<std::string> OssStorageProvider::List(const std::string &bucket, const std::string &path) {
+absl::StatusOr<FileList> OssStorageProvider::List(const std::string &bucket, const std::string &path) {
   std::vector<std::string> keys;
 
   oss::ListObjectsRequest request(bucket);
@@ -86,7 +86,7 @@ absl::Status OssStorageProvider::DownloadFile(const TransferMeta &m) {
   return absl::OkStatus();
 }
 
-std::vector<std::filesystem::path> OssStorageProvider::Download(const TransferMeta &meta) {
+absl::StatusOr<FilePathList> OssStorageProvider::Download(const TransferMeta &meta) {
   Expect(client_, "oss client not inited");
   std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
   std::vector<std::filesystem::path> result;

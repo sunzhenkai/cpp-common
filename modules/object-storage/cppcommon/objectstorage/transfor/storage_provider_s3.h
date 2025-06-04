@@ -20,10 +20,10 @@ class S3StorageProvider : public StorageProvider {
   explicit S3StorageProvider(StorageProviderOptions &&options);
   S3StorageProvider();
 
-  std::vector<std::string> List(const std::string &bucket, const std::string &path) override;
+  absl::StatusOr<FileList> List(const std::string &bucket, const std::string &path) override;
   absl::Status Upload(const TransferMeta &m) override;
   absl::Status DownloadFile(const TransferMeta &meta) override;
-  std::vector<std::filesystem::path> Download(const TransferMeta &meta) override;
+  absl::StatusOr<FilePathList> Download(const TransferMeta &meta) override;
 
  private:
   std::shared_ptr<Aws::S3::S3Client> client_;
