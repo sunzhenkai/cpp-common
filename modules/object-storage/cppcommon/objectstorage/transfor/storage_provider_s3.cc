@@ -5,8 +5,10 @@
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
+#include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/ListBucketsRequest.h>
 #include <aws/s3/model/ListObjectsRequest.h>
+#include <aws/s3/model/ListObjectsV2Request.h>
 #include <aws/s3/model/PutObjectRequest.h>
 
 #include <fstream>
@@ -19,7 +21,9 @@
 
 #include "absl/status/status.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
+#include "cppcommon/utils/error.h"
 #include "cppcommon/utils/os.h"
+#include "cppcommon/utils/str.h"
 #include "fmt/format.h"
 
 namespace cppcommon::os {
@@ -87,13 +91,70 @@ absl::Status S3StorageProvider::Upload(const TransferMeta &m) {
   return absl::OkStatus();
 }
 
-absl::Status S3StorageProvider::DownloadFile(const TransferMeta &meta) {
-  throw std::runtime_error("method not be implemented");
-  // return absl::OkStatus();
+absl::Status S3StorageProvider::DownloadFile(const TransferMeta &m) {
+  auto &lp = m.local_file_path;
+  ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
+  ExpectOrInternal(cppcommon::EndsWith(lp, "/"),
+                   FMT("destination file path should not end with '/'. [{}]", m.ToString()));
+  // 1. ensure local dest path
+  OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
+  // 2. download file
+  Aws::S3::Model::GetObjectRequest objectRequest;
+  objectRequest.WithBucket(m.bucket).WithKey(m.remote_file_path);
+  auto outcome = client_->GetObject(objectRequest);
+  // 3. write file
+  if (outcome.IsSuccess()) {
+    std::ofstream localFile;
+    localFile.open(m.local_file_path.c_str(), std::ios::out | std::ios::binary);
+    if (localFile.is_open()) {
+      const Aws::IOStream &s3Stream = outcome.GetResult().GetBody();
+      localFile << s3Stream.rdbuf();
+      localFile.close();
+    } else {
+      return absl::InternalError(FMT("cannot open file. [file={}]", m.local_file_path));
+    }
+  } else {
+    return absl::InternalError(FMT("cannot download file from s3. [info={}, error={}, message={}]", m.ToString(),
+                                   outcome.GetError().GetExceptionName(), outcome.GetError().GetMessage()));
+  }
+  return absl::OkStatus();
 }
 
 std::vector<std::filesystem::path> S3StorageProvider::Download(const TransferMeta &meta) {
-  throw std::runtime_error("method not be implemented");
-  // return {};
+  Expect(client_, "s3 client not inited");
+  std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
+  std::vector<std::filesystem::path> result;
+
+  // List S3 objects
+  Aws::S3::Model::ListObjectsV2Request request;
+  request.SetBucket(meta.bucket);
+  request.SetPrefix(meta.remote_file_path);
+
+  bool hasMoreObjects = true;
+  while (hasMoreObjects) {
+    auto outcome = client_->ListObjectsV2(request);
+    Expect(outcome.IsSuccess(), FMT("list s3 object failed. [err={}]", outcome.GetError().GetMessage()));
+
+    const auto &objectSummaries = outcome.GetResult().GetContents();
+    for (const auto &obj : objectSummaries) {
+      auto key = obj.GetKey();
+      auto cur = base / std::filesystem::path(key.substr(meta.remote_file_path.size()));
+      if (key.back() == '/') continue;
+      auto dm = TransferMeta{.bucket = meta.bucket, .remote_file_path = key, .local_file_path = cur};
+      auto s = DownloadFile(dm);
+      if (!s.ok()) {
+        spdlog::error("Download s3 object failed. [info={}, error={}]", dm.ToString(), s.ToString());
+      } else {
+        spdlog::info("Download s3 object success. [info={}]", dm.ToString());
+      }
+      result.emplace_back(cur);
+    }
+
+    hasMoreObjects = outcome.GetResult().GetIsTruncated();
+    if (hasMoreObjects) {
+      request.SetContinuationToken(outcome.GetResult().GetNextContinuationToken());
+    }
+  }
+  return result;
 }
 }  // namespace cppcommon::os
