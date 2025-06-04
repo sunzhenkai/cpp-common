@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
+#include "cppcommon/objectstorage/transfor/storage_provider_gcs.h"
 #include "cppcommon/objectstorage/transfor/storage_provider_oss.h"
 #include "cppcommon/objectstorage/transfor/storage_provider_s3.h"
 
@@ -26,6 +27,9 @@ inline std::shared_ptr<StorageProvider> NewObjectTransfor(ServiceProvider provid
       return std::shared_ptr<StorageProvider>(new OssStorageProvider());
     case ServiceProvider::S3:
       return std::shared_ptr<StorageProvider>(new S3StorageProvider());
+    case ServiceProvider::GCS:
+      return std::shared_ptr<StorageProvider>(new GcsStorageProvider());
+
     default:
       throw std::runtime_error("unsupported storage service provider");
   }
@@ -37,6 +41,8 @@ inline std::shared_ptr<StorageProvider> NewObjectTransfor(ServiceProvider provid
       return std::shared_ptr<StorageProvider>(new OssStorageProvider(std::move(options)));
     case ServiceProvider::S3:
       return std::shared_ptr<StorageProvider>(new S3StorageProvider(std::move(options)));
+    case ServiceProvider::GCS:
+      return std::shared_ptr<StorageProvider>(new GcsStorageProvider(std::move(options)));
     default:
       throw std::runtime_error("unsupported storage service provider");
   }
