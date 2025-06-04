@@ -20,8 +20,9 @@ class GcsStorageProvider : public StorageProvider {
   GcsStorageProvider();
 
   std::vector<std::string> List(const std::string &bucket, const std::string &path) override;
-  absl::Status Upload(const std::string &bucket, const std::string &object_key,
-                      const std::string &local_file_path) override;
+  absl::Status Upload(const TransferMeta &m) override;
+  absl::Status DownloadFile(const TransferMeta &meta) override;
+  std::vector<std::filesystem::path> Download(const TransferMeta &meta) override;
 
  private:
   std::shared_ptr<gcs::Client> client_;

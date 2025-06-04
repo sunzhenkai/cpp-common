@@ -21,8 +21,9 @@ class S3StorageProvider : public StorageProvider {
   S3StorageProvider();
 
   std::vector<std::string> List(const std::string &bucket, const std::string &path) override;
-  absl::Status Upload(const std::string &bucket, const std::string &object_key,
-                      const std::string &local_file_path) override;
+  absl::Status Upload(const TransferMeta &m) override;
+  absl::Status DownloadFile(const TransferMeta &meta) override;
+  std::vector<std::filesystem::path> Download(const TransferMeta &meta) override;
 
  private:
   std::shared_ptr<Aws::S3::S3Client> client_;

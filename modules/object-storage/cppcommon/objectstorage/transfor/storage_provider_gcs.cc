@@ -34,16 +34,25 @@ std::vector<std::string> GcsStorageProvider::List(const std::string &bucket, con
   return keys;
 }
 
-absl::Status GcsStorageProvider::Upload(const std::string &bucket, const std::string &object_key,
-                                        const std::string &local_file_path) {
-  std::ifstream source(local_file_path, std::ios::binary);
+absl::Status GcsStorageProvider::Upload(const TransferMeta &m) {
+  std::ifstream source(m.local_file_path, std::ios::binary);
   if (!source.is_open()) {
-    return absl::NotFoundError(absl::StrFormat("Cannot open file: %s", local_file_path));
+    return absl::NotFoundError(absl::StrFormat("Cannot open file: %s", m.local_file_path));
   }
-  auto writer = client_->WriteObject(bucket, object_key);
+  auto writer = client_->WriteObject(m.bucket, m.remote_file_path);
   writer << source.rdbuf();
   source.close();
   writer.Close();
   return absl::OkStatus();
+}
+
+absl::Status GcsStorageProvider::DownloadFile(const TransferMeta &meta) {
+  throw std::runtime_error("method not be implemented");
+  // return absl::OkStatus();
+}
+
+std::vector<std::filesystem::path> GcsStorageProvider::Download(const TransferMeta &meta) {
+  throw std::runtime_error("method not be implemented");
+  // return {};
 }
 }  // namespace cppcommon::os

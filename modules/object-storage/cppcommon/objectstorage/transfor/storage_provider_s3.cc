@@ -12,11 +12,13 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "cppcommon/objectstorage/transfor/storage_provider.h"
 #include "cppcommon/utils/os.h"
 #include "fmt/format.h"
 
@@ -60,23 +62,22 @@ std::vector<std::string> S3StorageProvider::List(const std::string &bucket, cons
   return ret;
 }
 
-absl::Status S3StorageProvider::Upload(const std::string &bucket, const std::string &object_key,
-                                       const std::string &local_file_path) {
+absl::Status S3StorageProvider::Upload(const TransferMeta &m) {
   if (!client_) {
     return absl::InternalError("[Upload] S3 client is not initialized");
   }
 
-  std::ifstream input(local_file_path, std::ios::binary);
+  std::ifstream input(m.local_file_path, std::ios::binary);
   if (!input.is_open()) {
-    return absl::InternalError(fmt::format("[Upload] Failed to open local file: {}", local_file_path));
+    return absl::InternalError(fmt::format("[Upload] Failed to open local file: {}", m.local_file_path));
   }
 
   Aws::S3::Model::PutObjectRequest request;
-  request.SetBucket(bucket);
-  request.SetKey(object_key);
+  request.SetBucket(m.bucket);
+  request.SetKey(m.remote_file_path);
 
   auto stream =
-      Aws::MakeShared<Aws::FStream>("UploadFileStream", local_file_path.c_str(), std::ios::in | std::ios::binary);
+      Aws::MakeShared<Aws::FStream>("UploadFileStream", m.local_file_path.c_str(), std::ios::in | std::ios::binary);
   request.SetBody(stream);
 
   auto outcome = client_->PutObject(request);
@@ -84,5 +85,15 @@ absl::Status S3StorageProvider::Upload(const std::string &bucket, const std::str
     return absl::InternalError(fmt::format("[Upload] Failed to upload: {}", outcome.GetError().GetMessage()));
   }
   return absl::OkStatus();
+}
+
+absl::Status S3StorageProvider::DownloadFile(const TransferMeta &meta) {
+  throw std::runtime_error("method not be implemented");
+  // return absl::OkStatus();
+}
+
+std::vector<std::filesystem::path> S3StorageProvider::Download(const TransferMeta &meta) {
+  throw std::runtime_error("method not be implemented");
+  // return {};
 }
 }  // namespace cppcommon::os

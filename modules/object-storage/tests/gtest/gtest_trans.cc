@@ -21,7 +21,7 @@ TEST(Trans, OSS) {
   auto files = tr->List(bucket, "");
   spdlog::info("objects: {}", ToString(files));
 
-  auto pr = tr->Upload(bucket, "test/upload/LICENSE", "LICENSE");
+  auto pr = tr->Upload({bucket, "test/upload/LICENSE", "LICENSE"});
   spdlog::info("upload result: {}", pr.ToString());
 }
 
@@ -33,9 +33,9 @@ TEST(Trans, Log) {
   LocalBasicSink::Options options{
       .name = "runtime", .is_rotate = true, .max_rows_per_file = 2, .on_roll_callback = [&](const std::string &fn) {
         spdlog::info("rollfile: {}", fn);
-        auto pr = tr->Upload(bucket, "test/upload/abc", fn);
+        auto pr = tr->Upload({bucket, "test/upload/abc", fn});
         spdlog::info("upload result: {}", pr.ToString());
-        pr = tr->Upload(bucket, fmt::format("test/upload/{}", fn), fn);
+        pr = tr->Upload({bucket, fmt::format("test/upload/{}", fn), fn});
         spdlog::info("upload result: {}", pr.ToString());
       }};
   LocalBasicSink s(std::move(options));

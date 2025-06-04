@@ -13,6 +13,13 @@ namespace cppcommon {
   if (!(expr)) throw std::runtime_error(message);
 #endif
 
+template <typename E, typename T>
+inline void Expect(const E &expr, const T &message) {
+  if (!expr) {
+    throw std::runtime_error(message);
+  }
+}
+
 template <typename T>
 void Assert(bool condition, T message) {
   if (!condition) {
