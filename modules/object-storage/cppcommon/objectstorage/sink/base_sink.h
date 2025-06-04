@@ -61,7 +61,7 @@ class BaseSink {
     int64_t max_rows_per_file{1000000};
     size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
     std::string suffix{"log"};
-    OnRollFileCallback on_roll_call_back{};  // callling with last filepath when rolling file
+    OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
   };
 
   struct State {
@@ -78,8 +78,8 @@ class BaseSink {
     if (ofs_) {
       ofs_->Close();
     }
-    if (options_.on_roll_call_back && !rotated_files_.empty()) {
-      options_.on_roll_call_back(rotated_files_.front());
+    if (options_.on_roll_callback && !rotated_files_.empty()) {
+      options_.on_roll_callback(rotated_files_.front());
     }
   }
 
@@ -152,6 +152,9 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::RollFile() {
   std::string filepath = NextFilePath();
+  if (ofs_) {
+    ofs_->Close();
+  }
   ofs_ = std::make_shared<FS>();
   ofs_->Open(filepath);
   if (!ofs_->IsOpen()) {
@@ -160,8 +163,8 @@ void BaseSink<Record, FS>::RollFile() {
   state_.file_index++;
   state_.current_row_nums = 0;
   if (!rotated_files_.empty()) {
-    if (options_.on_roll_call_back) {
-      options_.on_roll_call_back(rotated_files_.front());
+    if (options_.on_roll_callback) {
+      options_.on_roll_callback(rotated_files_.front());
     }
   }
   rotated_files_.push(filepath);
