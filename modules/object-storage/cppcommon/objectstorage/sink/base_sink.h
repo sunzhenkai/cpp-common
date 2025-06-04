@@ -75,8 +75,10 @@ class BaseSink {
 
   ~BaseSink() {
     Close();
-    ofs_->Close();
-    if (options_.on_roll_call_back) {
+    if (ofs_) {
+      ofs_->Close();
+    }
+    if (options_.on_roll_call_back && !rotated_files_.empty()) {
       options_.on_roll_call_back(rotated_files_.front());
     }
   }
