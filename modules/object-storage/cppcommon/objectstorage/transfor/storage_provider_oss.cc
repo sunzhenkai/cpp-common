@@ -24,6 +24,14 @@ std::string GetRegionFromEndpoint(const std::string &endpoint) {
   return endpoint.substr(oss_prefix.size(), it - oss_prefix.size());
 }
 
+std::string GetOssRegion(const StorageProviderOptions &options) {
+  if (options.region.empty()) {
+    return GetRegionFromEndpoint(options.endpoint);
+  } else {
+    return options.region;
+  }
+}
+
 StorageProviderOptions GetOssOptionsFromEnv() {
   StorageProviderOptions options;
   options.access_key_id = cppcommon::GetEnv("OSS_ACCESS_KEY_ID", "");
@@ -37,12 +45,15 @@ StorageProviderOptions GetOssOptionsFromEnv() {
 }
 
 OssStorageProvider::OssStorageProvider(StorageProviderOptions &&options) {
+  if (options.region.empty()) {
+    options.region = GetRegionFromEndpoint(options.endpoint);
+  }
   oss::ClientConfiguration conf;
   conf.signatureVersion = oss::SignatureVersionType::V4;
   auto credentialsProvider =
       std::make_shared<oss::SimpleCredentialsProvider>(options.access_key_id, options.access_key_secret);
   client_ = std::make_shared<oss::OssClient>(options.endpoint, credentialsProvider, conf);
-  client_->SetRegion(options.region);
+  client_->SetRegion(GetOssRegion(options));
 }
 
 OssStorageProvider::OssStorageProvider() : OssStorageProvider(GetOssOptionsFromEnv()) {}
