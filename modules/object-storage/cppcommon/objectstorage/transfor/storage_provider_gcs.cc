@@ -12,7 +12,9 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "cppcommon/extends/abseil/absl.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
+#include "cppcommon/utils/error.h"
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
@@ -75,7 +77,10 @@ absl::Status GcsStorageProvider::DownloadFile(const TransferMeta &m) {
 }
 
 absl::StatusOr<FilePathList> GcsStorageProvider::Download(const TransferMeta &meta) {
-  std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
+  ExpectOrInternal(client_, "client not inited");
+  ExpectOrInternal(fs::is_directory(meta.local_file_path), "local file path must be directory");
+
+  std::filesystem::path base = std::filesystem::path(meta.local_file_path);
   std::vector<std::filesystem::path> result;
   // list files
   google::cloud::storage::ListObjectsReader reader =

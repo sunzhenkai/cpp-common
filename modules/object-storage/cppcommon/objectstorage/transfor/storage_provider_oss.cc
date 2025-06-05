@@ -3,7 +3,7 @@
 #include <alibabacloud/oss/OssClient.h>
 #include <alibabacloud/oss/auth/CredentialsProvider.h>
 
-#include <iostream>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -42,14 +42,13 @@ OssStorageProvider::OssStorageProvider() : OssStorageProvider(GetOssOptionsFromE
 
 absl::StatusOr<FileList> OssStorageProvider::List(const std::string &bucket, const std::string &path) {
   std::vector<std::string> keys;
-
   oss::ListObjectsRequest request(bucket);
   request.setPrefix(path);
-  request.setDelimiter("/");
+  // request.setDelimiter("/");
 
   auto outcome = client_->ListObjects(request);
   if (!outcome.isSuccess()) {
-    std::cerr << "[OSS::List] Error: " << outcome.error().Message() << "\n";
+    spdlog::error("[OSS::List] Error: {}", outcome.error().Message());
     return keys;
   }
 
@@ -71,11 +70,13 @@ absl::Status OssStorageProvider::Upload(const TransferMeta &meta) {
 absl::Status OssStorageProvider::DownloadFile(const TransferMeta &m) {
   auto &lp = m.local_file_path;
   ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
-  ExpectOrInternal(lp[lp.size() - 1] != '/', FMT("destination file path should not end with '/'. [{}]", m.ToString()));
+  ExpectOrInternal(!cppcommon::EndsWith(lp, "/"),
+                   FMT("destination file path should not end with '/'. [{}]", m.ToString()));
+  auto parent = fs::path(lp).parent_path();
   // 1. ensure local dest path
   OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
   // 2. download file
-  auto check_point_dir = fs::path(lp).parent_path() / fs::path("checkpoints");
+  auto check_point_dir = parent.empty() ? fs::path("checkpoints") : fs::path(parent) / fs::path("checkpoints");
   fs::create_directories(check_point_dir.string());
   oss::DownloadObjectRequest request(m.bucket, m.remote_file_path, m.local_file_path, check_point_dir.string());
   auto outcome = client_->ResumableDownloadObject(request);
@@ -83,29 +84,30 @@ absl::Status OssStorageProvider::DownloadFile(const TransferMeta &m) {
                    FMT("download file from oss failed. [msg={}, host={}, request={}, dest_dir={}, check_point_dir={}]",
                        outcome.error().Message(), outcome.error().Host(), outcome.error().RequestId(),
                        m.local_file_path, check_point_dir.string()));
+  fs::remove(check_point_dir);
   return absl::OkStatus();
 }
 
 absl::StatusOr<FilePathList> OssStorageProvider::Download(const TransferMeta &meta) {
-  Expect(client_, "oss client not inited");
-  std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
+  ExpectOrInternal(client_, "client not inited");
+  ExpectOrInternal(fs::is_directory(meta.local_file_path), "local file path must be directory");
   std::vector<std::filesystem::path> result;
+
   // list files
   AlibabaCloud::OSS::ListObjectsV2Request list_request(meta.bucket);
   list_request.setPrefix(meta.remote_file_path);
   auto outcome = client_->ListObjectsV2(list_request);
-  Expect(outcome.isSuccess(), FMT("list oss object failed. [err={}]", outcome.error().Message()));
+  ExpectOrInternal(outcome.isSuccess(), FMT("list oss object failed. [err={}]", outcome.error().Message()));
+
   for (const auto &obj : outcome.result().ObjectSummarys()) {
-    auto cur = base / std::filesystem::path(obj.Key().substr(meta.remote_file_path.size()));
     if (cppcommon::EndsWith(obj.Key(), "/")) continue;
+    auto cur = GetObjLocalFilePath(meta.remote_file_path, meta.local_file_path, obj.Key());
     auto dm = TransferMeta{.bucket = meta.bucket, .remote_file_path = obj.Key(), .local_file_path = cur};
     auto s = DownloadFile(dm);
     if (!s.ok()) {
       spdlog::error("Download oss object failed. [info={}, error={}]", dm.ToString(), s.ToString());
-    } else {
-      spdlog::info("Download oss object success. [info={}]", dm.ToString());
     }
-    result.emplace_back(cur);
+    result.emplace_back(fs::path(cur));
   }
   return result;
 }

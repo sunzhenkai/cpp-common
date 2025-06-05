@@ -7,7 +7,6 @@
 #pragma once
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "alibabacloud/oss/OssClient.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"

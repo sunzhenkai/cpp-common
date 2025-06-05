@@ -10,16 +10,16 @@
 #include <aws/s3/model/ListObjectsRequest.h>
 #include <aws/s3/model/ListObjectsV2Request.h>
 #include <aws/s3/model/PutObjectRequest.h>
+#include <spdlog/spdlog.h>
 
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "cppcommon/extends/abseil/absl.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
 #include "cppcommon/utils/error.h"
 #include "cppcommon/utils/os.h"
@@ -121,8 +121,9 @@ absl::Status S3StorageProvider::DownloadFile(const TransferMeta &m) {
 }
 
 absl::StatusOr<FilePathList> S3StorageProvider::Download(const TransferMeta &meta) {
-  Expect(client_, "s3 client not inited");
-  std::filesystem::path base = std::filesystem::path(meta.local_file_path) / std::filesystem::path(meta.file_name);
+  ExpectOrInternal(client_, "client not inited");
+  ExpectOrInternal(fs::is_directory(meta.local_file_path), "local file path must be directory");
+  std::filesystem::path base = std::filesystem::path(meta.local_file_path);
   std::vector<std::filesystem::path> result;
 
   // List S3 objects
@@ -133,7 +134,7 @@ absl::StatusOr<FilePathList> S3StorageProvider::Download(const TransferMeta &met
   bool hasMoreObjects = true;
   while (hasMoreObjects) {
     auto outcome = client_->ListObjectsV2(request);
-    Expect(outcome.IsSuccess(), FMT("list s3 object failed. [err={}]", outcome.GetError().GetMessage()));
+    ExpectOrInternal(outcome.IsSuccess(), FMT("list s3 object failed. [err={}]", outcome.GetError().GetMessage()));
 
     const auto &objectSummaries = outcome.GetResult().GetContents();
     for (const auto &obj : objectSummaries) {
