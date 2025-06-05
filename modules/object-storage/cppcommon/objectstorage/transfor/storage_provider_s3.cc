@@ -21,7 +21,6 @@
 #include "absl/status/status.h"
 #include "cppcommon/extends/abseil/absl.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
-#include "cppcommon/utils/error.h"
 #include "cppcommon/utils/os.h"
 #include "cppcommon/utils/str.h"
 #include "fmt/format.h"
@@ -52,7 +51,7 @@ S3StorageProvider::S3StorageProvider() : S3StorageProvider(GetS3OptionsFromEnv()
 
 absl::StatusOr<FileList> S3StorageProvider::List(const std::string &bucket, const std::string &path) {
   Aws::S3::Model::ListObjectsRequest request;
-  request.WithBucket(bucket).WithPrefix(path);  //.WithDelimiter("/");
+  request.WithBucket(bucket).WithPrefix(path);  // .WithDelimiter("/");
 
   std::vector<std::string> ret;
   auto outcome = client_->ListObjects(request);

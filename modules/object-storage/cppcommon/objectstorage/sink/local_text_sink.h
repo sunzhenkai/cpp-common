@@ -1,10 +1,11 @@
-
 /**
  * @file base_sink_impl.h
  * @brief
  * @author zhenkai.sun
  * @date 2025-05-30 16:20:22
  */
+#pragma once
+
 #include <filesystem>
 #include <fstream>
 #include <string>
