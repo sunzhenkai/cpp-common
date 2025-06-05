@@ -16,7 +16,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(RapidJSON CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 
-set(THIRD_LIBRARIES spdlog::spdlog rapidjson absl::status)
+set(THIRD_LIBRARIES spdlog::spdlog rapidjson absl::status absl::statusor)
 
 include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)

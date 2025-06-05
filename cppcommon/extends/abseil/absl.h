@@ -13,4 +13,7 @@ namespace cppcommon::extends {
   if (!(expr)) return status;
 #define ExpectOrRetMsg(expr, code, message) \
   if (!(expr)) return absl::ErrnoToStatus(code, message)
+#define ExpectOrInternal(expr, message) \
+  if (!(expr)) return absl::InternalError(message)
+
 }  // namespace cppcommon::extends

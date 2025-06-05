@@ -7,7 +7,6 @@
 #pragma once
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "alibabacloud/oss/OssClient.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
@@ -20,9 +19,10 @@ class OssStorageProvider : public StorageProvider {
   explicit OssStorageProvider(StorageProviderOptions &&options);
   OssStorageProvider();
 
-  std::vector<std::string> List(const std::string &bucket, const std::string &path) override;
-  absl::Status Upload(const std::string &bucket, const std::string &object_key,
-                      const std::string &local_file_path) override;
+  absl::StatusOr<FileList> List(const std::string &bucket, const std::string &path) override;
+  absl::Status Upload(const TransferMeta &m) override;
+  absl::Status DownloadFile(const TransferMeta &meta) override;
+  absl::StatusOr<FilePathList> Download(const TransferMeta &meta) override;
 
  private:
   std::shared_ptr<oss::OssClient> client_;
