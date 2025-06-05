@@ -13,18 +13,26 @@
 #include "cppcommon/extends/fmt/fmt.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
 #include "cppcommon/utils/os.h"
-#include "cppcommon/utils/str.h"
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
 namespace fs = std::filesystem;
 
+std::string GetRegionFromEndpoint(const std::string &endpoint) {
+  const std::string oss_prefix = "oss-";
+  auto it = endpoint.find_first_of('.');
+  return endpoint.substr(oss_prefix.size(), it - oss_prefix.size());
+}
+
 StorageProviderOptions GetOssOptionsFromEnv() {
   StorageProviderOptions options;
   options.access_key_id = cppcommon::GetEnv("OSS_ACCESS_KEY_ID", "");
   options.access_key_secret = cppcommon::GetEnv("OSS_ACCESS_KEY_SECRET", "");
-  options.region = cppcommon::GetEnv("OSS_REGION", "");
   options.endpoint = cppcommon::GetEnv("OSS_ENDPOINT", "");
+  options.region = cppcommon::GetEnv("OSS_REGION", "");
+  if (options.region.empty()) {
+    options.region = GetRegionFromEndpoint(options.endpoint);
+  }
   return options;
 }
 
