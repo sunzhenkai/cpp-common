@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
 

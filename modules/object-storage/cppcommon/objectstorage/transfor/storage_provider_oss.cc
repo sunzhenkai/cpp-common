@@ -100,7 +100,7 @@ absl::StatusOr<FilePathList> OssStorageProvider::Download(const TransferMeta &me
   ExpectOrInternal(outcome.isSuccess(), FMT("list oss object failed. [err={}]", outcome.error().Message()));
 
   for (const auto &obj : outcome.result().ObjectSummarys()) {
-    if (cppcommon::EndsWith(obj.Key(), "/")) continue;
+    if (obj.Key().back() == '/') continue;
     auto cur = GetObjLocalFilePath(meta.remote_file_path, meta.local_file_path, obj.Key());
     auto dm = TransferMeta{.bucket = meta.bucket, .remote_file_path = obj.Key(), .local_file_path = cur};
     auto s = DownloadFile(dm);

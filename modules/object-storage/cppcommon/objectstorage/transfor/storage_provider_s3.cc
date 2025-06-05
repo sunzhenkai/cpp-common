@@ -52,7 +52,7 @@ S3StorageProvider::S3StorageProvider() : S3StorageProvider(GetS3OptionsFromEnv()
 
 absl::StatusOr<FileList> S3StorageProvider::List(const std::string &bucket, const std::string &path) {
   Aws::S3::Model::ListObjectsRequest request;
-  request.WithBucket(bucket).WithPrefix(path).WithDelimiter("/");
+  request.WithBucket(bucket).WithPrefix(path);  //.WithDelimiter("/");
 
   std::vector<std::string> ret;
   auto outcome = client_->ListObjects(request);
@@ -94,7 +94,7 @@ absl::Status S3StorageProvider::Upload(const TransferMeta &m) {
 absl::Status S3StorageProvider::DownloadFile(const TransferMeta &m) {
   auto &lp = m.local_file_path;
   ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
-  ExpectOrInternal(cppcommon::EndsWith(lp, "/"),
+  ExpectOrInternal(!cppcommon::EndsWith(lp, "/"),
                    FMT("destination file path should not end with '/'. [{}]", m.ToString()));
   // 1. ensure local dest path
   OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
@@ -139,14 +139,12 @@ absl::StatusOr<FilePathList> S3StorageProvider::Download(const TransferMeta &met
     const auto &objectSummaries = outcome.GetResult().GetContents();
     for (const auto &obj : objectSummaries) {
       auto key = obj.GetKey();
-      auto cur = base / std::filesystem::path(key.substr(meta.remote_file_path.size()));
+      auto cur = GetObjLocalFilePath(meta.remote_file_path, meta.local_file_path, key);
       if (key.back() == '/') continue;
       auto dm = TransferMeta{.bucket = meta.bucket, .remote_file_path = key, .local_file_path = cur};
       auto s = DownloadFile(dm);
       if (!s.ok()) {
         spdlog::error("Download s3 object failed. [info={}, error={}]", dm.ToString(), s.ToString());
-      } else {
-        spdlog::info("Download s3 object success. [info={}]", dm.ToString());
       }
       result.emplace_back(cur);
     }

@@ -1,3 +1,7 @@
+#include <aws/core/Aws.h>
+#include <aws/s3/S3Client.h>
+#include <aws/s3/model/GetObjectRequest.h>
+#include <aws/s3/model/PutObjectRequest.h>
 #include <spdlog/spdlog.h>
 
 #include <string>
@@ -9,16 +13,19 @@
 #include "cppcommon/utils/to_str.h"
 #include "gtest/gtest.h"
 
-TEST(Trans, Oss) {
-  AlibabaCloud::OSS::InitializeSdk();
+TEST(Trans, S3) {
+  Aws::SDKOptions options;
+  Aws::InitAPI(options);
 
-  std::string bucket = std::getenv("OSS_BUCKET");
-  auto tr = NewObjectTransfor(cppcommon::os::ServiceProvider::OSS);
+  std::string bucket = std::getenv("S3_BUCKET");
+  auto tr = NewObjectTransfor(cppcommon::os::ServiceProvider::S3);
   auto r = tr->List(bucket, "test");
   spdlog::info("bucket={}, objects={}", bucket, cppcommon::ToString(r.value()));
 
   cppcommon::WriteFile("foo", "bar");
   auto s = tr->Upload({.bucket = bucket, .remote_file_path = "test/foo", .local_file_path = "foo"});
+  spdlog::info("upload result: {}", s.ToString());
+  s = tr->Upload({.bucket = bucket, .remote_file_path = "test/sub/foo", .local_file_path = "foo"});
   spdlog::info("upload result: {}", s.ToString());
 
   s = tr->DownloadFile({.bucket = bucket, .remote_file_path = "test/foo", .local_file_path = "output/foo-download"});
@@ -35,5 +42,5 @@ TEST(Trans, Oss) {
     spdlog::error("download failed, error={}", r2.status().ToString());
   }
 
-  AlibabaCloud::OSS::ShutdownSdk();
+  Aws::ShutdownAPI(options);
 }

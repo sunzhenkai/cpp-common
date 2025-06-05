@@ -9,9 +9,7 @@
 #include "cppcommon/utils/to_str.h"
 #include "gtest/gtest.h"
 
-TEST(Trans, Oss) {
-  AlibabaCloud::OSS::InitializeSdk();
-
+TEST(Trans, Gcs) {
   std::string bucket = std::getenv("OSS_BUCKET");
   auto tr = NewObjectTransfor(cppcommon::os::ServiceProvider::OSS);
   auto r = tr->List(bucket, "test");
@@ -34,6 +32,4 @@ TEST(Trans, Oss) {
   } else {
     spdlog::error("download failed, error={}", r2.status().ToString());
   }
-
-  AlibabaCloud::OSS::ShutdownSdk();
 }
