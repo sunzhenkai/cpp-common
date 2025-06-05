@@ -48,6 +48,7 @@ class StorageProvider {
 
  protected:
   absl::Status EnsureLocalPath(const fs::path &p, bool overwrite = false);
+  absl::Status PreDownloadFile(const TransferMeta &meta);
 };
 
 inline absl::Status StorageProvider::EnsureLocalPath(const fs::path &p, bool overwrite) {
@@ -60,6 +61,14 @@ inline absl::Status StorageProvider::EnsureLocalPath(const fs::path &p, bool ove
   } else if (!parent.empty() && parent != ".") {
     ExpectOrInternal(fs::create_directories(p.parent_path()), "create directory failed.");
   }
+  return absl::OkStatus();
+}
+
+inline absl::Status StorageProvider::PreDownloadFile(const TransferMeta &m) {
+  auto &lp = m.local_file_path;
+  ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
+  ExpectOrInternal(lp.back() != '/', FMT("destination file path should not end with '/'. [{}]", m.ToString()));
+  OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
   return absl::OkStatus();
 }
 

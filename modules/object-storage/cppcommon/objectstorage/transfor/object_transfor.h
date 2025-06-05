@@ -7,6 +7,7 @@
 #pragma once
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
@@ -40,8 +41,15 @@ inline std::shared_ptr<StorageProvider> NewObjectTransfor(ServiceProvider provid
       return std::shared_ptr<StorageProvider>(new OssStorageProvider(std::move(options)));
     case ServiceProvider::S3:
       return std::shared_ptr<StorageProvider>(new S3StorageProvider(std::move(options)));
+    default:
+      throw std::runtime_error("unsupported storage service provider");
+  }
+}
+
+inline std::shared_ptr<StorageProvider> NewObjectTransfor(ServiceProvider provider, const std::string &config_file) {
+  switch (provider) {
     case ServiceProvider::GCS:
-      return std::shared_ptr<StorageProvider>(new GcsStorageProvider(std::move(options)));
+      return std::shared_ptr<StorageProvider>(new GcsStorageProvider(config_file));
     default:
       throw std::runtime_error("unsupported storage service provider");
   }

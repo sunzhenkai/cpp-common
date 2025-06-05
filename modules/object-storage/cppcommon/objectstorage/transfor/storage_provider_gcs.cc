@@ -2,6 +2,8 @@
 
 #include <alibabacloud/oss/OssClient.h>
 #include <alibabacloud/oss/auth/CredentialsProvider.h>
+#include <google/cloud/credentials.h>
+#include <google/cloud/storage/client.h>
 #include <google/cloud/storage/client_options.h>
 
 #include <fstream>
@@ -17,12 +19,16 @@
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
-GcsStorageProvider::GcsStorageProvider(StorageProviderOptions &&options) {
-  auto co = gcs::ClientOptions::CreateDefaultClientOptions().value();
+GcsStorageProvider::GcsStorageProvider(const std::string &service_account_json_string) {
+  auto cred = google::cloud::MakeServiceAccountCredentials(service_account_json_string);
+  auto co = google::cloud::Options{}.set<google::cloud::UnifiedCredentialsOption>(cred);
   client_ = std::make_shared<gcs::Client>(std::move(co));
 }
 
-GcsStorageProvider::GcsStorageProvider() : GcsStorageProvider(StorageProviderOptions{}) {}
+GcsStorageProvider::GcsStorageProvider() {
+  auto co = gcs::ClientOptions::CreateDefaultClientOptions().value();
+  client_ = std::make_shared<gcs::Client>(std::move(co));
+}
 
 absl::StatusOr<FileList> GcsStorageProvider::List(const std::string &bucket, const std::string &path) {
   std::vector<std::string> keys;
@@ -49,41 +55,25 @@ absl::Status GcsStorageProvider::Upload(const TransferMeta &m) {
 }
 
 absl::Status GcsStorageProvider::DownloadFile(const TransferMeta &m) {
-  auto &lp = m.local_file_path;
-  ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
-  ExpectOrInternal(lp[lp.size() - 1] != '/', FMT("destination file path should not end with '/'. [{}]", m.ToString()));
-
-  // 1. ensure local dest path
-  OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
-
-  // 2. download file
+  OkOrRet(PreDownloadFile(m));
   auto writer = client_->ReadObject(m.bucket, m.remote_file_path);
-  if (!writer) {
-    return absl::InternalError(FMT("Failed to read GCS object. [bucket={}, path={}]", m.bucket, m.remote_file_path));
-  }
-
-  std::ofstream outFile(m.local_file_path, std::ios::binary);
-  if (!outFile) {
-    return absl::InternalError(FMT("Failed to open local file. [path={}]", m.local_file_path));
-  }
-
-  outFile << writer.rdbuf();
-  if (!outFile) {
-    return absl::InternalError(FMT("Failed to write to local file. [path={}]", m.local_file_path));
-  }
-
+  ExpectOrInternal(writer, FMT("Failed to read GCS object. [bucket={}, path={}]", m.bucket, m.remote_file_path));
+  std::ofstream out(m.local_file_path, std::ios::binary);
+  ExpectOrInternal(out, FMT("Failed to open local file. [path={}]", m.local_file_path));
+  out << writer.rdbuf();
+  ExpectOrInternal(out, FMT("Failed to write to local file. [path={}]", m.local_file_path));
   return absl::OkStatus();
 }
 
-absl::StatusOr<FilePathList> GcsStorageProvider::Download(const TransferMeta &meta) {
+absl::StatusOr<FilePathList> GcsStorageProvider::Download(const TransferMeta &m) {
   ExpectOrInternal(client_, "client not inited");
-  ExpectOrInternal(fs::is_directory(meta.local_file_path), "local file path must be directory");
+  ExpectOrInternal(fs::is_directory(m.local_file_path), "local file path must be directory");
 
-  std::filesystem::path base = std::filesystem::path(meta.local_file_path);
+  std::filesystem::path base = std::filesystem::path(m.local_file_path);
   std::vector<std::filesystem::path> result;
   // list files
   google::cloud::storage::ListObjectsReader reader =
-      client_->ListObjects(meta.bucket, google::cloud::storage::Prefix(meta.remote_file_path));
+      client_->ListObjects(m.bucket, google::cloud::storage::Prefix(m.remote_file_path));
 
   for (auto const &object : reader) {
     if (!object) {
@@ -92,11 +82,10 @@ absl::StatusOr<FilePathList> GcsStorageProvider::Download(const TransferMeta &me
     }
 
     auto key = object->name();
-    auto cur = base / std::filesystem::path(key.substr(meta.remote_file_path.size()));
-
     if (key.back() == '/') continue;
 
-    auto dm = TransferMeta{.bucket = meta.bucket, .remote_file_path = key, .local_file_path = cur};
+    auto cur = GetObjLocalFilePath(m.remote_file_path, m.local_file_path, key);
+    auto dm = TransferMeta{.bucket = m.bucket, .remote_file_path = key, .local_file_path = cur};
     auto s = DownloadFile(dm);
     if (!s.ok()) {
       spdlog::error("Download gcs object failed. [info={}, error={}]", dm.ToString(), s.ToString());

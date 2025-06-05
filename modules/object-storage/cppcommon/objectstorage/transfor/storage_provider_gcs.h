@@ -16,7 +16,7 @@ namespace cppcommon::os {
 namespace gcs = google::cloud::storage;
 class GcsStorageProvider : public StorageProvider {
  public:
-  explicit GcsStorageProvider(StorageProviderOptions &&options);
+  explicit GcsStorageProvider(const std::string &service_account_json_string);
   GcsStorageProvider();
 
   absl::StatusOr<FileList> List(const std::string &bucket, const std::string &path) override;

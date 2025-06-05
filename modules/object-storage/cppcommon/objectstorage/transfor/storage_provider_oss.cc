@@ -67,16 +67,12 @@ absl::Status OssStorageProvider::Upload(const TransferMeta &meta) {
 }
 
 absl::Status OssStorageProvider::DownloadFile(const TransferMeta &m) {
-  auto &lp = m.local_file_path;
-  ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
-  ExpectOrInternal(!cppcommon::EndsWith(lp, "/"),
-                   FMT("destination file path should not end with '/'. [{}]", m.ToString()));
-  auto parent = fs::path(lp).parent_path();
-  // 1. ensure local dest path
-  OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
-  // 2. download file
+  OkOrRet(PreDownloadFile(m));
+  auto parent = fs::path(m.local_file_path).parent_path();
+
   auto check_point_dir = parent.empty() ? fs::path("checkpoints") : fs::path(parent) / fs::path("checkpoints");
   fs::create_directories(check_point_dir.string());
+  // download file
   oss::DownloadObjectRequest request(m.bucket, m.remote_file_path, m.local_file_path, check_point_dir.string());
   auto outcome = client_->ResumableDownloadObject(request);
   ExpectOrInternal(outcome.isSuccess(),

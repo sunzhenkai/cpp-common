@@ -91,17 +91,12 @@ absl::Status S3StorageProvider::Upload(const TransferMeta &m) {
 }
 
 absl::Status S3StorageProvider::DownloadFile(const TransferMeta &m) {
-  auto &lp = m.local_file_path;
-  ExpectOrInternal(!lp.empty(), FMT("destination path should not be empty. [{}]", m.ToString()));
-  ExpectOrInternal(!cppcommon::EndsWith(lp, "/"),
-                   FMT("destination file path should not end with '/'. [{}]", m.ToString()));
-  // 1. ensure local dest path
-  OkOrRet(EnsureLocalPath(fs::path(m.local_file_path), m.overwrite));
-  // 2. download file
+  OkOrRet(PreDownloadFile(m));
+  // download file
   Aws::S3::Model::GetObjectRequest objectRequest;
   objectRequest.WithBucket(m.bucket).WithKey(m.remote_file_path);
   auto outcome = client_->GetObject(objectRequest);
-  // 3. write file
+  // write file
   if (outcome.IsSuccess()) {
     std::ofstream localFile;
     localFile.open(m.local_file_path.c_str(), std::ios::out | std::ios::binary);
