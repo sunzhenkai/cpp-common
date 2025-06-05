@@ -12,7 +12,6 @@
 #include "cppcommon/extends/abseil/absl.h"
 #include "cppcommon/extends/fmt/fmt.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
-#include "cppcommon/utils/error.h"
 #include "cppcommon/utils/os.h"
 #include "cppcommon/utils/str.h"
 #include "spdlog/spdlog.h"

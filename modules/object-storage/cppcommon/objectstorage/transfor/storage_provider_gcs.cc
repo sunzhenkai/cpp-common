@@ -14,7 +14,6 @@
 #include "absl/status/status.h"
 #include "cppcommon/extends/abseil/absl.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
-#include "cppcommon/utils/error.h"
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
