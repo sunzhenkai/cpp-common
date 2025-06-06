@@ -27,4 +27,12 @@ void Assert(bool condition, T message) {
     std::abort();
   }
 }
+
+template <typename T>
+void OkOrExit(bool condition, T message) {
+  if (!condition) {
+    std::cerr << "Assertion failed: " << message << std::endl;
+    exit(1);
+  }
+}
 };  // namespace cppcommon
