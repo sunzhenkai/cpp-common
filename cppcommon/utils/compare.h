@@ -26,12 +26,11 @@ struct CompareOptions {
   VectorOptions vector_options;
 };
 
-template <typename T>
 struct ElementResult {
   std::string key;
-  std::vector<T> less;
-  std::vector<T> more;
-  std::vector<T> same;
+  std::vector<std::string> less;
+  std::vector<std::string> more;
+  std::vector<std::string> same;
 
   explicit operator bool() const { return less.empty() && more.empty(); }
 
@@ -40,7 +39,7 @@ struct ElementResult {
     if (!key.empty()) {
       ss << key << ": ";
     }
-    if (same == 0 && less.size() == 1 && more.size() == 1) {
+    if (same.size() == 0 && less.size() == 1 && more.size() == 1) {
       ss << less[0] << " != " << more[0];
     } else {
       for (auto &v : less) {
