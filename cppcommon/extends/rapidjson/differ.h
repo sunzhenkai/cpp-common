@@ -16,6 +16,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -23,7 +24,7 @@
 #include "cppcommon/utils/differ.h"
 
 namespace cppcommon::rapidjson {
-enum class DiffType { Less, More, TypeMismatch, ValueDiff };
+enum class DiffType { Less, More, TypeMismatch, Diff };
 
 inline std::string DiffTypeToString(DiffType type) {
   switch (type) {
@@ -33,8 +34,8 @@ inline std::string DiffTypeToString(DiffType type) {
       return "More";
     case DiffType::TypeMismatch:
       return "TypeMismatch";
-    case DiffType::ValueDiff:
-      return "ValueDiff";
+    case DiffType::Diff:
+      return "Diff";
     default:
       return "Unknown";
   }
@@ -47,9 +48,11 @@ struct DiffItem {
   std::string right_value;
   ElementResult detail;
 
-  std::string ToString(const std::string& prefix = "") const {
+  std::string ToString(const std::string& prefix = "", bool with_path = true) const {
     std::ostringstream oss;
-    oss << prefix << path << ": ";
+    if (with_path) {
+      oss << prefix << path << ": ";
+    }
     switch (type) {
       case DiffType::Less:
         oss << prefix << "-(" << right_value << ")";
@@ -60,7 +63,7 @@ struct DiffItem {
       case DiffType::TypeMismatch:
         oss << prefix << "T(" << left_value << ") != T(" << right_value << ")";
         break;
-      case DiffType::ValueDiff:
+      case DiffType::Diff:
         oss << prefix << detail.DiffString();
         // oss << prefix << "(" << left_value << ") != (" << right_value << ")";
         break;
@@ -76,6 +79,20 @@ struct DiffResult {
     std::stringstream ss;
     for (auto& item : items) {
       ss << prefix << item.ToString() << std::endl;
+    }
+    return ss.str();
+  }
+};
+
+struct DiffValueStat {
+  std::unordered_map<std::string, int> value_count;
+
+  inline void Add(const std::string& v) { ++value_count[v]; }
+
+  inline std::string ToString(const std::string& prefix = "") const {
+    std::stringstream ss;
+    for (auto& [k, v] : value_count) {
+      ss << prefix << "(" << v << ") " << k << std::endl;
     }
     return ss.str();
   }
@@ -106,6 +123,7 @@ struct BatchDiffResultStat {
   inline std::string ToString() const {
     std::stringstream ss;
     ss << std::endl;
+    // 1. summary
     ss << "--- Summary ---" << std::endl;
     ss << "total=" << TotalCount() << ", diff=" << diff_count << ", same=" << same_count << std::endl;
     ss << "diff pathes: " << std::endl;
@@ -116,23 +134,27 @@ struct BatchDiffResultStat {
     for (auto& [k, v] : type_stat) {
       ss << "  " << DiffTypeToString(k) << ", count=" << v.size() << std::endl;
     }
+    // 2. by diff pathes
     ss << "--- by diff pathes ---" << std::endl;
     for (auto& [k, v] : path_stat) {
       ss << "#" << k << std::endl;
+      DiffValueStat stat;
       for (auto& item : v) {
-        ss << item->ToString("  ");
+        stat.Add(item->ToString("", false));
       }
-      ss << std::endl;
+      ss << stat.ToString("  ");
     }
+    // 3. by diff types
     ss << "--- by diff types ---" << std::endl;
     for (auto& [k, v] : type_stat) {
-      ss << "  " << DiffTypeToString(k) << ", count=" << v.size() << std::endl;
       ss << "#" << DiffTypeToString(k) << std::endl;
+      DiffValueStat stat;
       for (auto& item : v) {
-        ss << item->ToString("  ");
+        stat.Add(item->ToString());
       }
-      ss << std::endl;
+      ss << stat.ToString("  ");
     }
+    // 4. by records
     ss << "--- by records ---" << std::endl;
     for (size_t i = 0; i < records.size(); ++i) {
       ss << "#" << i << ":" << std::endl;
@@ -185,7 +207,7 @@ inline void DiffJson(const CompareOptions& options, const ::rapidjson::Value& lh
     default: {
       auto r = cppcommon::CompareString(options, JsonValueToString(lhs), JsonValueToString(rhs));
       if (!r) {
-        diffs.push_back({path, DiffType::ValueDiff, JsonValueToString(lhs), JsonValueToString(rhs), std::move(r)});
+        diffs.push_back({path, DiffType::Diff, JsonValueToString(lhs), JsonValueToString(rhs), std::move(r)});
       }
     }
   }

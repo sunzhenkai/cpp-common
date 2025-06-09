@@ -5,7 +5,6 @@
  * @date 2025-06-08 21:13:50
  */
 #pragma once
-#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <functional>
@@ -103,8 +102,6 @@ ElementResult CompareString(const CompareOptions &options, const T &a, const T &
   std::vector<std::string> av, bv;
   cppcommon::StringSplit(av, a, options.vector_options.delimiter);
   cppcommon::StringSplit(bv, b, options.vector_options.delimiter);
-  spdlog::info("{} - {}", a, b);
-  spdlog::info("{} - {}", cppcommon::ToString(av), cppcommon::ToString(bv));
   return CompareVector(options, av, bv);
 }
 }  // namespace cppcommon
