@@ -122,7 +122,6 @@ struct BatchDiffResultStat {
 
   inline std::string ToString() const {
     std::stringstream ss;
-    ss << std::endl;
     // 1. summary
     ss << "--- Summary ---" << std::endl;
     ss << "total=" << TotalCount() << ", diff=" << diff_count << ", same=" << same_count << std::endl;
@@ -172,7 +171,6 @@ struct BatchDiffResultStat {
         }
       }
     }
-
     return ss.str();
   }
 };
