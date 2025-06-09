@@ -17,6 +17,9 @@
 namespace cppcommon {
 
 inline std::string JsonValueToString(const rapidjson::Value& val) {
+  if (val.IsString()) {
+    return val.GetString();
+  }
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   val.Accept(writer);

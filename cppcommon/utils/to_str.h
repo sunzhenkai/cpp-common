@@ -125,4 +125,19 @@ std::string ToString(const T& v) {
     return ContainerToString(v);
   }
 }
+
+template <typename T>
+std::string ToNoQueoteString(const T& value) {
+  std::stringstream ss;
+  if constexpr (is_string_like_v<std::decay_t<T>>) {
+    ss << value;
+  } else if constexpr (std::is_floating_point_v<T>) {
+    ss << std::fixed << std::setprecision(15) << value;
+  } else if constexpr (std::is_same_v<std::decay_t<T>, bool>) {
+    ss << (value ? "true" : "false");
+  } else {
+    ss << value;
+  }
+  return ss.str();
+}
 }  // namespace cppcommon
