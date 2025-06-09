@@ -126,42 +126,53 @@ struct BatchDiffResultStat {
     // 1. summary
     ss << "--- Summary ---" << std::endl;
     ss << "total=" << TotalCount() << ", diff=" << diff_count << ", same=" << same_count << std::endl;
-    ss << "diff pathes: " << std::endl;
-    for (auto& [k, v] : path_stat) {
-      ss << "  " << k << ", count=" << v.size() << std::endl;
+    if (!path_stat.empty()) {
+      ss << "diff pathes: " << std::endl;
+      for (auto& [k, v] : path_stat) {
+        ss << "  " << k << ", count=" << v.size() << std::endl;
+      }
     }
-    ss << "diff types: " << std::endl;
-    for (auto& [k, v] : type_stat) {
-      ss << "  " << DiffTypeToString(k) << ", count=" << v.size() << std::endl;
+    if (!type_stat.empty()) {
+      ss << "diff types: " << std::endl;
+      for (auto& [k, v] : type_stat) {
+        ss << "  " << DiffTypeToString(k) << ", count=" << v.size() << std::endl;
+      }
     }
     // 2. by diff pathes
-    ss << "--- by diff pathes ---" << std::endl;
-    for (auto& [k, v] : path_stat) {
-      ss << "#" << k << std::endl;
-      DiffValueStat stat;
-      for (auto& item : v) {
-        stat.Add(item->ToString("", false));
+    if (!path_stat.empty()) {
+      ss << "--- by diff pathes ---" << std::endl;
+      for (auto& [k, v] : path_stat) {
+        ss << "#" << k << std::endl;
+        DiffValueStat stat;
+        for (auto& item : v) {
+          stat.Add(item->ToString("", false));
+        }
+        ss << stat.ToString("  ");
       }
-      ss << stat.ToString("  ");
     }
     // 3. by diff types
-    ss << "--- by diff types ---" << std::endl;
-    for (auto& [k, v] : type_stat) {
-      ss << "#" << DiffTypeToString(k) << std::endl;
-      DiffValueStat stat;
-      for (auto& item : v) {
-        stat.Add(item->ToString());
+    if (!type_stat.empty()) {
+      ss << "--- by diff types ---" << std::endl;
+      for (auto& [k, v] : type_stat) {
+        ss << "#" << DiffTypeToString(k) << std::endl;
+        DiffValueStat stat;
+        for (auto& item : v) {
+          stat.Add(item->ToString());
+        }
+        ss << stat.ToString("  ");
       }
-      ss << stat.ToString("  ");
     }
     // 4. by records
-    ss << "--- by records ---" << std::endl;
-    for (size_t i = 0; i < records.size(); ++i) {
-      ss << "#" << i << ":" << std::endl;
-      ss << records[i].ToString("  ");
+    if (diff_count > 0) {
+      ss << "--- by records ---" << std::endl;
+      for (size_t i = 0; i < records.size(); ++i) {
+        if (!records[i].items.empty()) {
+          ss << "#" << i << ":" << std::endl;
+          ss << records[i].ToString("  ");
+        }
+      }
     }
 
-    ss << std::endl;
     return ss.str();
   }
 };
