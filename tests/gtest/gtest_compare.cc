@@ -27,3 +27,8 @@ TEST(Cmp, JS) {
   s = cppcommon::rapidjson::DiffJson(stat, {.vector_options{.delimiter = ','}}, json1, json2);
   spdlog::info("{}: {}", s.ToString(), stat.ToString());
 }
+
+TEST(Cmp, JsV2) {
+  cppcommon::rapidjson::BatchDiffResultStat stat;
+  spdlog::info("{}", stat.ToString());
+}
