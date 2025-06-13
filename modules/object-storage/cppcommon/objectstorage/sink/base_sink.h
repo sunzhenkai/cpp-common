@@ -70,6 +70,11 @@ class BaseSink {
     int file_index{0};
     int64_t current_row_nums{0};
     bool stopped_{false};
+
+    inline void Roll() {
+      ++file_index;
+      current_row_nums = 0;
+    }
   };
 
   explicit BaseSink(Options &&options)
@@ -101,6 +106,9 @@ class BaseSink {
   void WriteThreadFunc();
   void RollFile();
   std::string NextFilePath();
+  bool IsRoll();
+  void RemoveOverflowFiles();
+  void OpenNewFile(const std::string &filepath);
 
  protected:
   Options options_;
@@ -113,6 +121,26 @@ class BaseSink {
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
 };
+
+template <typename Record, typename FS>
+inline bool BaseSink<Record, FS>::IsRoll() {
+  if (!ofs_ || (options_.is_rotate && state_.current_row_nums >= options_.max_rows_per_file)) {
+    return true;
+  }
+  return false;
+}
+
+template <typename Record, typename FS>
+void BaseSink<Record, FS>::RemoveOverflowFiles() {
+  while (options_.max_backup_files > 0 && static_cast<int>(rotated_files_.size()) > options_.max_backup_files) {
+    auto oldest_fp = rotated_files_.front();
+    rotated_files_.pop();
+    spdlog::info("backup files exceeds the limit . [limit={}, remove={}]", options_.max_backup_files, oldest_fp);
+    if (!std::filesystem::remove(oldest_fp)) {
+      spdlog::error("remove rotated log file failed. [file={}]", oldest_fp);
+    }
+  }
+}
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::Close() {
@@ -141,7 +169,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
       }
     }
 
-    if (!ofs_ || (options_.is_rotate && state_.current_row_nums >= options_.max_rows_per_file)) {
+    if (IsRoll()) {
       RollFile();
     }
 
@@ -152,8 +180,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 }
 
 template <typename Record, typename FS>
-void BaseSink<Record, FS>::RollFile() {
-  std::string filepath = NextFilePath();
+void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   if (ofs_) {
     ofs_->Close();
   }
@@ -162,23 +189,21 @@ void BaseSink<Record, FS>::RollFile() {
   if (!ofs_->IsOpen()) {
     throw std::runtime_error("Failed to open file: " + filepath);
   }
-  state_.file_index++;
-  state_.current_row_nums = 0;
+}
+
+template <typename Record, typename FS>
+void BaseSink<Record, FS>::RollFile() {
+  std::string filepath = NextFilePath();
+  OpenNewFile(filepath);
+  state_.Roll();
+  // trigger rolling file
   if (!rotated_files_.empty()) {
     if (options_.on_roll_callback) {
       options_.on_roll_callback(rotated_files_.back());
     }
   }
   rotated_files_.push(filepath);
-  // checking max backup files
-  while (options_.max_backup_files > 0 && static_cast<int>(rotated_files_.size()) > options_.max_backup_files) {
-    auto oldest_fp = rotated_files_.front();
-    rotated_files_.pop();
-    spdlog::info("backup files exceeds the limit . [limit={}, remove={}]", options_.max_backup_files, oldest_fp);
-    if (!std::filesystem::remove(oldest_fp)) {
-      spdlog::error("remove rotated log file failed. [file={}]", oldest_fp);
-    }
-  }
+  RemoveOverflowFiles();
 }
 
 template <typename Record, typename FS>
