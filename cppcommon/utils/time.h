@@ -49,6 +49,8 @@ inline int DurationSeconds(const std::chrono::duration<int64_t>& d) {
 
 struct DateInfo {
   std::shared_ptr<std::tm> tm;
+  explicit DateInfo(int64_t timestamp_ms = -1, int timezone_offset = 0);
+  explicit DateInfo(std::shared_ptr<std::tm> tm);
 
   // since sunday, [0, 6]. sunday: 0, monday~staurday: 1~6
   inline int GetWeekDay() { return tm->tm_wday; }
@@ -92,18 +94,12 @@ struct DateInfo {
       throw std::runtime_error("[DateInfo::Apply] make time failed");
     }
     auto ntm = std::gmtime(&tt);
-    return {.tm = std::make_shared<std::tm>(*ntm)};
+    return DateInfo(std::make_shared<std::tm>(*ntm));
   }
 };
 
 inline DateInfo GetDateInfo(int64_t timestamp_ms = -1, int timezone_offset = 0) {
-  if (timestamp_ms < 0) {
-    timestamp_ms = CurrentTs();
-  }
-  auto ts_s = timestamp_ms / 1000 + timezone_offset * 3600;
-  auto t = static_cast<std::time_t>(ts_s);
-  std::tm* tm = std::gmtime(&t);
-  return DateInfo{.tm = std::make_shared<std::tm>(*tm)};
+  return DateInfo(timestamp_ms, timezone_offset);
 }
 
 /// @brief get the day of the week, from 0 to 6

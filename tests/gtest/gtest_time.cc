@@ -51,4 +51,8 @@ TEST(Time, Fmt) {
   auto f = di.Format("%Y-%m-%d %H:%M:%S");
   std::cout << f << std::endl;
   ASSERT_EQ("2025-06-13 07:48:40", f);
+
+  di = cppcommon::DateInfo();
+  f = di.Format("%Y-%m-%d %H:%M:%S");
+  std::cout << f << std::endl;
 }
