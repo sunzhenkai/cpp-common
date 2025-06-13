@@ -45,3 +45,10 @@ TEST(Time, Apply) {
   std::cout << ndi.Format("%y%m") << std::endl;
   ASSERT_EQ(ndi.Format("%y%m"), "1401");
 }
+
+TEST(Time, Fmt) {
+  auto di = cppcommon::GetDateInfo(1749800920000);
+  auto f = di.Format("%Y-%m-%d %H:%M:%S");
+  std::cout << f << std::endl;
+  ASSERT_EQ("2025-06-13 07:48:40", f);
+}
