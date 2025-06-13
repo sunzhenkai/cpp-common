@@ -124,7 +124,9 @@ class BaseSink {
 
 template <typename Record, typename FS>
 inline bool BaseSink<Record, FS>::IsRoll() {
-  if (!ofs_ || (options_.is_rotate && state_.current_row_nums >= options_.max_rows_per_file)) {
+  if (!ofs_) return true;
+  if (!options_.is_rotate) return false;
+  if (state_.current_row_nums >= options_.max_rows_per_file) {
     return true;
   }
   return false;
