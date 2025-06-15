@@ -68,7 +68,7 @@ TEST(Sink, Long) {
                         .path_fmt = cppcommon::os::TimeRollPathFormat::PARTED,
                     }},
       .on_roll_callback = [](const std::string &fn, const cppcommon::os::TimeRollPolicy &policy) {
-        spdlog::info("rollfile: {}, {}, {}", fn, policy.GetDatePath(),
+        spdlog::info("rollfile: {}, {} - {}, {}", fn, policy.GetPreviousDatePath(), policy.GetDatePath(),
                      cppcommon::DateInfo(policy.last_rolling_ts_ms).Format("%H-%M-%S"));
       }};
   LocalBasicSink s(std::move(options));

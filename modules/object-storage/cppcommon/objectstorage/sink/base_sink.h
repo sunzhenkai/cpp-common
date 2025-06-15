@@ -58,6 +58,15 @@ enum class RollPeriod {
 // NORMAL: 2025/06/06/02; PARTED: part=2026-06-06/02
 enum class TimeRollPathFormat { UNSPECIFIED, NORMAL, PARTED };
 
+inline std::string GenDatePath(int64_t ts_ms, TimeRollPathFormat path_fmt) {
+  auto di = cppcommon::DateInfo(ts_ms);
+  if (path_fmt == TimeRollPathFormat::PARTED) {
+    return di.Format("part=%Y-%m-%d/%H-%M-%S");
+  } else {
+    return fmt::format("%Y/%m/%d/%H", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
+  }
+}
+
 struct TimeRollPolicy {
   RollPeriod period;
   TimeRollPathFormat path_fmt;
@@ -76,13 +85,10 @@ struct TimeRollPolicy {
     }
   }
 
-  inline std::string GetDatePath() const {
-    auto di = cppcommon::DateInfo(last_rolling_ts_ms);
-    if (path_fmt == TimeRollPathFormat::PARTED) {
-      return di.Format("part=%Y-%m-%d/%H");
-    } else {
-      return fmt::format("%Y/%m/%d/%H", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
-    }
+  inline std::string GetDatePath(int64_t ts_ms = -1) const { return GenDatePath(last_rolling_ts_ms, path_fmt); }
+
+  inline std::string GetPreviousDatePath() const {
+    return GenDatePath(last_rolling_ts_ms - static_cast<int64_t>(period), path_fmt);
   }
 
   int64_t last_rolling_ts_ms{-1};
