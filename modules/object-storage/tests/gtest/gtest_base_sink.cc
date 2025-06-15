@@ -1,13 +1,16 @@
 #include <spdlog/spdlog.h>
 
 #include <string>
+#include <thread>
 #include <utility>
 
 #include "cppcommon/objectstorage/api.h"
+#include "cppcommon/objectstorage/sink/base_sink.h"
 #include "gtest/gtest.h"
 
 using namespace cppcommon;
 using namespace cppcommon::os;
+using std::chrono_literals::operator""s;
 
 TEST(Sink, Base) {
   LocalBasicSink::Options options{
@@ -53,4 +56,23 @@ TEST(Sink, BaseV3) {
   s.Write("f");
   s.Write("g");
   s.Write("h");
+}
+
+TEST(Sink, Long) {
+  LocalBasicSink::Options options{
+      .name = "runtime",
+      .roll_options{.max_backup_files = 10,
+                    .time_roll_policy{
+                        .period = cppcommon::os::RollPeriod::MINITELY,
+                        .path_fmt = cppcommon::os::TimeRollPathFormat::PARTED,
+                    }},
+      .on_roll_callback = [](const std::string &fn, const cppcommon::os::TimeRollPolicy &policy) {
+        spdlog::info("rollfile: {}, {}", fn, policy.GetDatePath());
+      }};
+  LocalBasicSink s(std::move(options));
+
+  for (auto i = 0; i < 60 * 3; ++i) {
+    s.Write(std::to_string(i));
+    std::this_thread::sleep_for(1s);
+  }
 }

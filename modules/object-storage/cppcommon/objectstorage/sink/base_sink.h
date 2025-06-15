@@ -49,6 +49,7 @@ class SinkFileSystem {
 
 enum class RollPeriod {
   UNSPECIFIED,
+  MINITELY = 1000 * 60,
   HOURLY = 1000 * 60 * 60,
   DAILY = 1000 * 60 * 60 * 24,
 };
@@ -83,7 +84,6 @@ struct TimeRollPolicy {
     }
   }
 
- private:
   int64_t last_rolling_ts_ms{-1};
 };
 
