@@ -139,7 +139,7 @@ class BaseSink {
       ofs_->Close();
     }
     if (options_.on_roll_callback && !rotated_files_.empty()) {
-      options_.on_roll_callback(rotated_files_.back());
+      options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
     }
   }
 
@@ -178,8 +178,8 @@ class BaseSink {
 template <typename Record, typename FS>
 inline bool BaseSink<Record, FS>::IsRoll() {
   if (!ofs_) return true;
-  if (!options_.is_rotate) return false;
-  if (state_.current_row_nums >= options_.max_rows_per_file) {
+  if (!options_.roll_options.is_rotate) return false;
+  if (state_.current_row_nums >= options_.roll_options.max_rows_per_file) {
     return true;
   }
   if (options_.roll_options.time_roll_policy.TryRoll()) {
@@ -190,10 +190,12 @@ inline bool BaseSink<Record, FS>::IsRoll() {
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::RemoveOverflowFiles() {
-  while (options_.max_backup_files > 0 && static_cast<int>(rotated_files_.size()) > options_.max_backup_files) {
+  while (options_.roll_options.max_backup_files > 0 &&
+         static_cast<int>(rotated_files_.size()) > options_.roll_options.max_backup_files) {
     auto oldest_fp = rotated_files_.front();
     rotated_files_.pop();
-    spdlog::info("backup files exceeds the limit . [limit={}, remove={}]", options_.max_backup_files, oldest_fp);
+    spdlog::info("backup files exceeds the limit . [limit={}, remove={}]", options_.roll_options.max_backup_files,
+                 oldest_fp);
     if (!std::filesystem::remove(oldest_fp)) {
       spdlog::error("remove rotated log file failed. [file={}]", oldest_fp);
     }
@@ -257,7 +259,7 @@ void BaseSink<Record, FS>::RollFile() {
   // trigger rolling file
   if (!rotated_files_.empty()) {
     if (options_.on_roll_callback) {
-      options_.on_roll_callback(rotated_files_.back());
+      options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
     }
   }
   rotated_files_.push(filepath);
@@ -299,13 +301,13 @@ std::string BaseSink<Record, FS>::NextFilePath() {
     if (options_.name_options.name_with_timestamp) {
       filepath << "_" << cppcommon::CurrentTsMs();
     }
-    if (options_.is_rotate) {
+    if (options_.roll_options.is_rotate) {
       filepath << "_" << state_.file_index;
     }
-    filepath << "." << options_.suffix;
+    filepath << "." << options_.name_options.suffix;
 
     auto dest = filepath.str();
-    if (!options_.is_rotate || !FS::IsExists(dest)) {
+    if (!options_.roll_options.is_rotate || !FS::IsExists(dest)) {
       return dest;
     }
     ++state_.file_index;
