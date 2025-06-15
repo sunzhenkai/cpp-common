@@ -38,7 +38,7 @@ class SinkFileSystem {
   virtual void Flush() {}
 
   static bool IsExists(const std::string &filepath);
-  ~SinkFileSystem() {
+  virtual ~SinkFileSystem() {
     Flush();
     Close();
   }
@@ -61,7 +61,7 @@ inline std::string GenDatePath(int64_t ts_ms, TimeRollPathFormat path_fmt) {
   if (path_fmt == TimeRollPathFormat::PARTED) {
     return di.Format("part=%Y-%m-%d/%H");
   } else {
-    return fmt::format("%Y/%m/%d/%H", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
+    return fmt::format("%Y/%m/%d/%H");
   }
 }
 
@@ -83,7 +83,7 @@ struct TimeRollPolicy {
     }
   }
 
-  inline std::string GetDatePath(int64_t ts_ms = -1) const { return GenDatePath(last_rolling_ts_ms, path_fmt); }
+  inline std::string GetDatePath() const { return GenDatePath(last_rolling_ts_ms, path_fmt); }
 
   inline std::string GetPreviousDatePath() const {
     return GenDatePath(last_rolling_ts_ms - static_cast<int64_t>(period), path_fmt);
