@@ -49,6 +49,7 @@ class SinkFileSystem {
 
 enum class RollPeriod {
   UNSPECIFIED,
+  SECONDLY = 1000,
   MINITELY = 1000 * 60,
   HOURLY = 1000 * 60 * 60,
   DAILY = 1000 * 60 * 60 * 24,
@@ -65,7 +66,7 @@ struct TimeRollPolicy {
     if (period == RollPeriod::UNSPECIFIED) return false;
     auto cur = cppcommon::CurrentTsMs();
     if (last_rolling_ts_ms < 0) {
-      last_rolling_ts_ms = cur;
+      last_rolling_ts_ms = cur - cur % static_cast<int64_t>(period);
       return false;
     } else if (cur - last_rolling_ts_ms > static_cast<int64_t>(period)) {
       last_rolling_ts_ms = cur - cur % static_cast<int64_t>(period);
@@ -78,9 +79,9 @@ struct TimeRollPolicy {
   inline std::string GetDatePath() const {
     auto di = cppcommon::DateInfo(last_rolling_ts_ms);
     if (path_fmt == TimeRollPathFormat::PARTED) {
-      return fmt::format("part={}-{}-{}/{}", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
+      return di.Format("part=%Y-%m-%d/%H");
     } else {
-      return fmt::format("{}/{}/{}/{}", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
+      return fmt::format("%Y/%m/%d/%H", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
     }
   }
 
@@ -117,6 +118,7 @@ class BaseSink {
     FileNameOptions name_options;
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
+    // size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
   };
 
   struct State {
@@ -147,7 +149,7 @@ class BaseSink {
   void Write(T &&record) {
     {
       std::unique_lock lock(mutex_);
-      cv_.wait(lock, [&] { return state_.stopped_; });
+      // cv_.wait(lock, [&] { return state_.stopped_ || queue_.size() < options_.max_inflight_nums; });
       if (state_.stopped_) return;
       queue_.emplace(std::forward<T>(record));
     }
@@ -234,7 +236,10 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
     }
 
     if (ofs_) {
+      spdlog::info("CKPT WRITE{}", "");
       state_.current_row_nums += ofs_->Write(std::forward<Record>(record));
+      // CKPT TODO
+      ofs_->Flush();
     }
   }
 }

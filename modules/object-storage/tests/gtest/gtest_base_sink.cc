@@ -6,6 +6,7 @@
 
 #include "cppcommon/objectstorage/api.h"
 #include "cppcommon/objectstorage/sink/base_sink.h"
+#include "cppcommon/utils/time.h"
 #include "gtest/gtest.h"
 
 using namespace cppcommon;
@@ -63,16 +64,19 @@ TEST(Sink, Long) {
       .name = "runtime",
       .roll_options{.max_backup_files = 10,
                     .time_roll_policy{
-                        .period = cppcommon::os::RollPeriod::MINITELY,
+                        .period = cppcommon::os::RollPeriod::SECONDLY,
                         .path_fmt = cppcommon::os::TimeRollPathFormat::PARTED,
                     }},
       .on_roll_callback = [](const std::string &fn, const cppcommon::os::TimeRollPolicy &policy) {
-        spdlog::info("rollfile: {}, {}", fn, policy.GetDatePath());
+        spdlog::info("rollfile: {}, {}, {}", fn, policy.GetDatePath(),
+                     cppcommon::DateInfo(policy.last_rolling_ts_ms).Format("%H-%M-%S"));
       }};
   LocalBasicSink s(std::move(options));
 
-  for (auto i = 0; i < 60 * 3; ++i) {
-    s.Write(std::to_string(i));
-    std::this_thread::sleep_for(1s);
+  for (auto i = 0; i < 10 * 3; ++i) {
+    auto msg = std::to_string(i);
+    spdlog::info("<< {}", msg);
+    s.Write(msg);
+    std::this_thread::sleep_for(0.1s);
   }
 }
