@@ -9,12 +9,10 @@
 #include <fmt/format.h>
 #include <unistd.h>
 
-#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-#include <iomanip>
 #include <memory>
 #include <mutex>
 #include <ostream>
@@ -61,7 +59,7 @@ enum class TimeRollPathFormat { UNSPECIFIED, NORMAL, PARTED };
 inline std::string GenDatePath(int64_t ts_ms, TimeRollPathFormat path_fmt) {
   auto di = cppcommon::DateInfo(ts_ms);
   if (path_fmt == TimeRollPathFormat::PARTED) {
-    return di.Format("part=%Y-%m-%d/%H-%M-%S");
+    return di.Format("part=%Y-%m-%d/%H");
   } else {
     return fmt::format("%Y/%m/%d/%H", di.GetHumanYear(), di.GetMonth(), di.GetMonthDay(), di.GetHour());
   }
