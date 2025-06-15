@@ -31,7 +31,12 @@ TEST(Trans, Log) {
   auto tr = NewObjectTransfor(ServiceProvider::OSS);
 
   LocalBasicSink::Options options{
-      .name = "runtime", .is_rotate = true, .max_rows_per_file = 2, .on_roll_callback = [&](const std::string &fn) {
+      .name = "runtime",
+      .roll_options{
+          .is_rotate = true,
+          .max_rows_per_file = 2,
+      },
+      .on_roll_callback = [&](const std::string &fn, const cppcommon::os::TimeRollPolicy &p) {
         spdlog::info("rollfile: {}", fn);
         auto pr = tr->Upload({bucket, "test/upload/abc", fn});
         spdlog::info("upload result: {}", pr.ToString());
@@ -49,7 +54,12 @@ TEST(Trans, Log) {
 std::shared_ptr<arrow::Table> GenTable();
 
 TEST(Trans, Arrow) {
-  LocalArrowTableSink::Options options{.name = "table", .is_rotate = true, .max_rows_per_file = 2, .suffix = "parquet"};
+  LocalArrowTableSink::Options options{.name = "table",
+                                       .name_options = {.suffix = "parquet"},
+                                       .roll_options = {
+                                           .is_rotate = true,
+                                           .max_rows_per_file = 2,
+                                       }};
   LocalArrowTableSink s(std::move(options));
   s.Write(GenTable());
   s.Write(GenTable());

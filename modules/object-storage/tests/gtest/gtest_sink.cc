@@ -76,7 +76,11 @@ TEST(Sink, Parquet) {
 }
 
 TEST(Sink, ParquetV2) {
-  LocalArrowTableSink::Options options{.name = "table", .is_rotate = false, .suffix = "parquet"};
+  LocalArrowTableSink::Options options{
+      .name = "table",
+      .name_options{.suffix = "parquet"},
+      .roll_options{.is_rotate = false},
+  };
   LocalArrowTableSink s(std::move(options));
   s.Write(GenTable());
   s.Write(GenTable());
