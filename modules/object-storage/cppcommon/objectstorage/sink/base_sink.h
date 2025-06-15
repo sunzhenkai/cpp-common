@@ -236,10 +236,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
     }
 
     if (ofs_) {
-      spdlog::info("CKPT WRITE{}", "");
       state_.current_row_nums += ofs_->Write(std::forward<Record>(record));
-      // CKPT TODO
-      ofs_->Flush();
     }
   }
 }
