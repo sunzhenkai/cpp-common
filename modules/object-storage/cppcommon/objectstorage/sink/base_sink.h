@@ -278,16 +278,6 @@ std::string BaseSink<Record, FS>::NextFilePath() {
     }
   }
 
-  // std::string date_str;
-  // if (options_.name_options.name_with_date) {
-  //   auto now = std::chrono::system_clock::now();
-  //   auto t = std::chrono::system_clock::to_time_t(now);
-  //   std::tm tm = *std::localtime(&t);
-  //   std::ostringstream date_stream;
-  //   date_stream << std::put_time(&tm, "%Y%m%d_%H%M%S");
-  //   date_str = date_stream.str();
-  // }
-
   while (true) {
     std::ostringstream filepath;
     if (!options_.path.empty()) {
