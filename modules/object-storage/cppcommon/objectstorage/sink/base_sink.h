@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <ostream>
@@ -69,17 +70,27 @@ struct TimeRollPolicy {
   RollPeriod period;
   TimeRollPathFormat path_fmt;
 
-  inline bool TryRoll() {
+  inline bool IsRoll() {
     if (period == RollPeriod::UNSPECIFIED) return false;
     auto cur = cppcommon::CurrentTsMs();
     if (last_rolling_ts_ms < 0) {
       last_rolling_ts_ms = cur - cur % static_cast<int64_t>(period);
       return false;
     } else if (cur - last_rolling_ts_ms > static_cast<int64_t>(period)) {
-      last_rolling_ts_ms = cur - cur % static_cast<int64_t>(period);
       return true;
     } else {
       return false;
+    }
+  }
+
+  inline void Roll() {
+    if (period != RollPeriod::UNSPECIFIED) {
+      auto cur = cppcommon::CurrentTsMs();
+      if (last_rolling_ts_ms < 0) {
+        last_rolling_ts_ms = cur - cur % static_cast<int64_t>(period);
+      } else if (cur - last_rolling_ts_ms > static_cast<int64_t>(period)) {
+        last_rolling_ts_ms = cur - cur % static_cast<int64_t>(period);
+      }
     }
   }
 
@@ -188,7 +199,7 @@ inline bool BaseSink<Record, FS>::IsRoll() {
   if (state_.current_row_nums >= options_.roll_options.max_rows_per_file) {
     return true;
   }
-  if (options_.roll_options.time_roll_policy.TryRoll()) {
+  if (options_.roll_options.time_roll_policy.IsRoll()) {
     return true;
   }
   return false;
@@ -262,6 +273,7 @@ void BaseSink<Record, FS>::RollFile() {
   std::string filepath = NextFilePath();
   OpenNewFile(filepath);
   state_.Roll();
+  options_.roll_options.time_roll_policy.Roll();
   // trigger rolling file
   if (!rotated_files_.empty()) {
     if (options_.on_roll_callback) {
