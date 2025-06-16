@@ -26,7 +26,11 @@ inline std::string JsonValueToString(const rapidjson::Value& val) {
   return buffer.GetString();
 }
 
-inline absl::Status ParseJson(const std::string& json_str, rapidjson::Document& doc) {
+inline absl::Status ParseJson(const std::string& json_str, rapidjson::Document& doc, bool allow_empty = false) {
+  if (allow_empty && json_str.empty()) {
+    doc.SetObject();
+    return absl::OkStatus();
+  }
   doc.Parse(json_str.c_str());
   if (doc.HasParseError()) {
     return absl::InternalError(GetParseError_En(doc.GetParseError()));

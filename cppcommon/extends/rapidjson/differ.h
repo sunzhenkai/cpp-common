@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <map>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -175,10 +176,41 @@ struct BatchDiffResultStat {
   }
 };
 
+inline void AddResultToDiffs(const CompareOptions& options, std::vector<DiffItem>& diffs, DiffItem&& item) {
+  const std::string& path = item.path;
+
+  for (const auto& pattern : options.ignore_pathes) {
+    try {
+      if (std::regex_match(path, std::regex(pattern))) {
+        return;
+      }
+    } catch (const std::regex_error& e) {
+      continue;
+    }
+  }
+
+  if (!options.filter_pathes.empty()) {
+    bool matched = false;
+    for (const auto& pattern : options.filter_pathes) {
+      try {
+        if (std::regex_match(path, std::regex(pattern))) {
+          matched = true;
+          break;
+        }
+      } catch (const std::regex_error& e) {
+        continue;
+      }
+    }
+    if (!matched) return;
+  }
+
+  diffs.push_back(std::move(item));
+}
+
 inline void DiffJson(const CompareOptions& options, const ::rapidjson::Value& lhs, const ::rapidjson::Value& rhs,
                      const std::string& path, std::vector<DiffItem>& diffs) {
   if (lhs.GetType() != rhs.GetType()) {
-    diffs.push_back({path, DiffType::TypeMismatch, JsonValueToString(lhs), JsonValueToString(rhs)});
+    AddResultToDiffs(options, diffs, {path, DiffType::TypeMismatch, JsonValueToString(lhs), JsonValueToString(rhs)});
     return;
   }
 
@@ -189,13 +221,13 @@ inline void DiffJson(const CompareOptions& options, const ::rapidjson::Value& lh
         if (rhs.HasMember(key.c_str())) {
           DiffJson(options, itr->value, rhs[key.c_str()], path + "/" + key, diffs);
         } else {
-          diffs.push_back({path + "/" + key, DiffType::More, JsonValueToString(itr->value), ""});
+          AddResultToDiffs(options, diffs, {path + "/" + key, DiffType::More, JsonValueToString(itr->value), ""});
         }
       }
       for (auto itr = rhs.MemberBegin(); itr != rhs.MemberEnd(); ++itr) {
         std::string key = itr->name.GetString();
         if (!lhs.HasMember(key.c_str())) {
-          diffs.push_back({path + "/" + key, DiffType::Less, "", JsonValueToString(itr->value)});
+          AddResultToDiffs(options, diffs, {path + "/" + key, DiffType::Less, "", JsonValueToString(itr->value)});
         }
       }
       break;
@@ -206,26 +238,29 @@ inline void DiffJson(const CompareOptions& options, const ::rapidjson::Value& lh
         DiffJson(options, lhs[i], rhs[i], path + "[" + std::to_string(i) + "]", diffs);
       }
       for (size_t i = min_size; i < lhs.Size(); ++i) {
-        diffs.push_back({path + "[" + std::to_string(i) + "]", DiffType::More, JsonValueToString(lhs[i]), ""});
+        AddResultToDiffs(options, diffs,
+                         {path + "[" + std::to_string(i) + "]", DiffType::More, JsonValueToString(lhs[i]), ""});
       }
       for (size_t i = min_size; i < rhs.Size(); ++i) {
-        diffs.push_back({path + "[" + std::to_string(i) + "]", DiffType::Less, "", JsonValueToString(rhs[i])});
+        AddResultToDiffs(options, diffs,
+                         {path + "[" + std::to_string(i) + "]", DiffType::Less, "", JsonValueToString(rhs[i])});
       }
       break;
     }
     default: {
       auto r = cppcommon::CompareString(options, JsonValueToString(lhs), JsonValueToString(rhs));
       if (!r) {
-        diffs.push_back({path, DiffType::Diff, JsonValueToString(lhs), JsonValueToString(rhs), std::move(r)});
+        AddResultToDiffs(options, diffs,
+                         {path, DiffType::Diff, JsonValueToString(lhs), JsonValueToString(rhs), std::move(r)});
       }
     }
   }
 }
 
 inline absl::Status DiffJson(BatchDiffResultStat& result, const CompareOptions& options, const std::string& lhs,
-                             const std::string& rhs) {
+                             const std::string& rhs, bool allow_empty = false) {
   ::rapidjson::Document ldoc, rdoc;
-  if (!ParseJson(lhs, ldoc).ok() || !ParseJson(rhs, rdoc).ok()) {
+  if (!ParseJson(lhs, ldoc, allow_empty).ok() || !ParseJson(rhs, rdoc, allow_empty).ok()) {
     return absl::InternalError("parse json string failed.");
   }
   DiffResult diffs;

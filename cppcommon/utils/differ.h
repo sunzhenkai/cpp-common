@@ -24,6 +24,8 @@ struct CompareOptions {
   };
 
   VectorOptions vector_options;
+  std::vector<std::string> filter_pathes;
+  std::vector<std::string> ignore_pathes;
 };
 
 struct ElementResult {
