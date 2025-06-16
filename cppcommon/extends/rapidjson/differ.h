@@ -223,9 +223,9 @@ inline void DiffJson(const CompareOptions& options, const ::rapidjson::Value& lh
 }
 
 inline absl::Status DiffJson(BatchDiffResultStat& result, const CompareOptions& options, const std::string& lhs,
-                             const std::string& rhs) {
+                             const std::string& rhs, bool allow_empty = false) {
   ::rapidjson::Document ldoc, rdoc;
-  if (!ParseJson(lhs, ldoc).ok() || !ParseJson(rhs, rdoc).ok()) {
+  if (!ParseJson(lhs, ldoc, allow_empty).ok() || !ParseJson(rhs, rdoc, allow_empty).ok()) {
     return absl::InternalError("parse json string failed.");
   }
   DiffResult diffs;
