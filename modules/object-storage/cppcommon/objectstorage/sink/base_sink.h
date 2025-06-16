@@ -60,7 +60,7 @@ enum class TimeRollPathFormat { UNSPECIFIED, NORMAL, PARTED };
 inline std::string GenDatePath(int64_t ts_ms, TimeRollPathFormat path_fmt) {
   auto di = cppcommon::DateInfo(ts_ms);
   if (path_fmt == TimeRollPathFormat::PARTED) {
-    return di.Format("part=%Y-%m-%d/%H");
+    return di.Format("part=%Y-%m-%d/hour=%H");
   } else {
     return fmt::format("%Y/%m/%d/%H");
   }
