@@ -21,7 +21,11 @@ namespace fs = std::filesystem;
 std::string GetRegionFromEndpoint(const std::string &endpoint) {
   const std::string oss_prefix = "oss-";
   auto it = endpoint.find_first_of('.');
-  return endpoint.substr(oss_prefix.size(), it - oss_prefix.size());
+  if (it == std::string::npos || it <= oss_prefix.size()) {
+    return "";
+  } else {
+    return endpoint.substr(oss_prefix.size(), it - oss_prefix.size());
+  }
 }
 
 std::string GetOssRegion(const StorageProviderOptions &options) {
