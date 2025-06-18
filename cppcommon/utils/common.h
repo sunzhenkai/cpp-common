@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "cppcommon/utils/type_traits.h"
+
 namespace cppcommon {
 uint32_t RandomInt(const int &min = 0, const int &max = 0);
 double RandomDouble(const double &min = 0, const double &max = 1);
@@ -77,4 +79,41 @@ std::vector<int> TopNIndex(const std::vector<Campareble> &nums, size_t n, bool r
 
   return ret;
 }
+
+template <typename T, typename M, typename = std::enable_if_t<cppcommon::is_string_like_v<T>>>
+std::string GetFromMap(const M &m, const std::string &key, T dft) {
+  auto it = m.find(key);
+  if (it == m.end()) {
+    return dft;
+  }
+  return it->second;
+}
+
+template <typename T, typename M, typename = std::enable_if_t<!cppcommon::is_string_like_v<T>>>
+T GetFromMap(const M &m, const std::string &key, T dft) {
+  auto it = m.find(key);
+  if (it == m.end()) {
+    return dft;
+  }
+
+  const std::string &str_val = it->second;
+  if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
+    try {
+      return std::stoi(str_val);
+    } catch (...) {
+    }
+  } else if constexpr (std::is_same_v<T, bool>) {
+    return str_val == "true";
+  } else if constexpr (std::is_floating_point_v<T>) {
+    try {
+      return std::stod(str_val);
+    } catch (...) {
+    }
+  } else {
+    static_assert(std::false_type::value, "Unsupported type in GetParamValue");
+  }
+
+  return dft;
+}
+
 }  // namespace cppcommon
