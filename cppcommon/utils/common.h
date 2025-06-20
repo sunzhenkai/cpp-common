@@ -80,8 +80,8 @@ std::vector<int> TopNIndex(const std::vector<Campareble> &nums, size_t n, bool r
   return ret;
 }
 
-template <typename T, typename M, typename = std::enable_if_t<cppcommon::is_string_like_v<T>>>
-std::string GetFromMap(const M &m, const std::string &key, T dft) {
+template <typename M>
+std::string_view GetFromMap(const M &m, const std::string &key, std::string_view dft) {
   auto it = m.find(key);
   if (it == m.end()) {
     return dft;
@@ -89,8 +89,8 @@ std::string GetFromMap(const M &m, const std::string &key, T dft) {
   return it->second;
 }
 
-template <typename T, typename M, typename = std::enable_if_t<!cppcommon::is_string_like_v<T>>>
-T GetFromMap(const M &m, const std::string &key, T dft) {
+template <typename T, typename M>
+std::enable_if_t<!is_string_like_v<T>, T> GetFromMap(const M &m, const std::string &key, const T &dft) {
   auto it = m.find(key);
   if (it == m.end()) {
     return dft;
@@ -110,10 +110,8 @@ T GetFromMap(const M &m, const std::string &key, T dft) {
     } catch (...) {
     }
   } else {
-    static_assert(std::false_type::value, "Unsupported type in GetParamValue");
+    static_assert(std::false_type::value, "Unsupported type in GetFromMap");
   }
-
   return dft;
 }
-
 }  // namespace cppcommon
