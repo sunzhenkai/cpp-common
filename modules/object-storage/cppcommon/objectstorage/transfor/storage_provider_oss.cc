@@ -96,7 +96,8 @@ absl::Status OssStorageProvider::DownloadFile(const TransferMeta &m) {
   auto check_point_dir = parent.empty() ? fs::path("checkpoints") : fs::path(parent) / fs::path("checkpoints");
   fs::create_directories(check_point_dir.string());
   // download file
-  oss::DownloadObjectRequest request(m.bucket, m.remote_file_path, m.local_file_path, check_point_dir.string());
+  auto rfp = TryRemoveCloudStoragePrefix(ServiceProvider::OSS, m.bucket, m.remote_file_path);
+  oss::DownloadObjectRequest request(m.bucket, rfp, m.local_file_path, check_point_dir.string());
   auto outcome = client_->ResumableDownloadObject(request);
   ExpectOrInternal(outcome.isSuccess(),
                    FMT("download file from oss failed. [msg={}, host={}, request={}, dest_dir={}, check_point_dir={}]",
@@ -113,7 +114,7 @@ absl::StatusOr<FilePathList> OssStorageProvider::Download(const TransferMeta &me
 
   // list files
   AlibabaCloud::OSS::ListObjectsV2Request list_request(meta.bucket);
-  list_request.setPrefix(meta.remote_file_path);
+  list_request.setPrefix(TryRemoveCloudStoragePrefix(ServiceProvider::OSS, meta.bucket, meta.remote_file_path));
   auto outcome = client_->ListObjectsV2(list_request);
   ExpectOrInternal(outcome.isSuccess(), FMT("list oss object failed. [err={}]", outcome.error().Message()));
 

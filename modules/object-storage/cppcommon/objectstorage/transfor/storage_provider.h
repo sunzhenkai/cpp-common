@@ -16,6 +16,12 @@
 #include "cppcommon/utils/str.h"
 
 namespace cppcommon::os {
+enum class ServiceProvider {
+  OSS,  // aliyun
+  S3,   // amazon
+  GCS,  // gcp, google cloud storage
+};
+
 struct StorageProviderOptions {
   std::string access_key_id;
   std::string access_key_secret;
@@ -79,5 +85,47 @@ inline std::string GetObjLocalFilePath(const std::string &remove_file_path, cons
   auto relative_path = obj.substr(remove_file_path.size() + 1);
   auto cur = base.empty() ? fs::path(relative_path) : base / fs::path(relative_path);
   return cur.string();
+}
+
+// remove schema & bucket prefix
+// example:
+//  oss://bucket/path/to/object -> path/to/object
+//  path/to/object -> path/to/object
+//  /path/to/object -> path/to/object
+//  /test/to/object -> test/to/object  NOTE: bucket = test
+inline std::string TryRemoveCloudStoragePrefix(ServiceProvider provider, const std::string &bucket,
+                                               const std::string &fp) {
+  std::string schema;
+  switch (provider) {
+    case ServiceProvider::OSS:
+      schema = "oss://";
+      break;
+    case ServiceProvider::S3:
+      schema = "s3://";
+      break;
+    case ServiceProvider::GCS:
+      schema = "gs://";
+      break;
+    default:
+      throw std::invalid_argument("Unknown ServiceProvider");
+  }
+
+  std::string clean = fp;
+
+  if (clean.rfind(schema, 0) == 0) {
+    clean = clean.substr(schema.size());
+
+    // try remove bucket prefix only if has schema prefix
+    std::string bucket_prefix = bucket + "/";
+    if (clean.rfind(bucket_prefix, 0) == 0) {
+      clean = clean.substr(bucket_prefix.size());
+    }
+  }
+
+  while (!clean.empty() && clean[0] == '/') {
+    clean = clean.substr(1);
+  }
+
+  return clean;
 }
 }  // namespace cppcommon::os

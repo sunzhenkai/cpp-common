@@ -93,8 +93,9 @@ absl::Status S3StorageProvider::Upload(const TransferMeta &m) {
 absl::Status S3StorageProvider::DownloadFile(const TransferMeta &m) {
   OkOrRet(PreDownloadFile(m));
   // download file
+  auto rfp = TryRemoveCloudStoragePrefix(ServiceProvider::S3, m.bucket, m.remote_file_path);
   Aws::S3::Model::GetObjectRequest objectRequest;
-  objectRequest.WithBucket(m.bucket).WithKey(m.remote_file_path);
+  objectRequest.WithBucket(m.bucket).WithKey(rfp);
   auto outcome = client_->GetObject(objectRequest);
   // write file
   if (outcome.IsSuccess()) {
@@ -123,7 +124,7 @@ absl::StatusOr<FilePathList> S3StorageProvider::Download(const TransferMeta &met
   // List S3 objects
   Aws::S3::Model::ListObjectsV2Request request;
   request.SetBucket(meta.bucket);
-  request.SetPrefix(meta.remote_file_path);
+  request.SetPrefix(TryRemoveCloudStoragePrefix(ServiceProvider::S3, meta.bucket, meta.remote_file_path));
 
   bool hasMoreObjects = true;
   while (hasMoreObjects) {

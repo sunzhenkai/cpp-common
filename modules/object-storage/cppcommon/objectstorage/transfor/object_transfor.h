@@ -16,12 +16,6 @@
 #include "cppcommon/objectstorage/transfor/storage_provider_s3.h"
 
 namespace cppcommon::os {
-enum class ServiceProvider {
-  OSS,  // aliyun
-  S3,   // amazon
-  GCS,  // gcp, google cloud storage
-};
-
 inline std::shared_ptr<StorageProvider> NewObjectTransfor(ServiceProvider provider) {
   switch (provider) {
     case ServiceProvider::OSS:

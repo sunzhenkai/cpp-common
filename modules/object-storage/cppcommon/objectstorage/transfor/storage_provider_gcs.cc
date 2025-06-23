@@ -15,6 +15,7 @@
 
 #include "absl/status/status.h"
 #include "cppcommon/extends/abseil/absl.h"
+#include "cppcommon/objectstorage/transfor/object_transfor.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
 #include "spdlog/spdlog.h"
 
@@ -56,8 +57,10 @@ absl::Status GcsStorageProvider::Upload(const TransferMeta &m) {
 
 absl::Status GcsStorageProvider::DownloadFile(const TransferMeta &m) {
   OkOrRet(PreDownloadFile(m));
-  auto writer = client_->ReadObject(m.bucket, m.remote_file_path);
-  ExpectOrInternal(writer, FMT("Failed to read GCS object. [bucket={}, path={}]", m.bucket, m.remote_file_path));
+  auto rfp = TryRemoveCloudStoragePrefix(ServiceProvider::GCS, m.bucket, m.remote_file_path);
+  auto writer = client_->ReadObject(m.bucket, rfp);
+  ExpectOrInternal(
+      writer, FMT("Failed to read GCS object. [bucket={}, path={}, fixed_path={}]", m.bucket, m.remote_file_path, rfp));
   std::ofstream out(m.local_file_path, std::ios::binary);
   ExpectOrInternal(out, FMT("Failed to open local file. [path={}]", m.local_file_path));
   out << writer.rdbuf();
@@ -72,8 +75,9 @@ absl::StatusOr<FilePathList> GcsStorageProvider::Download(const TransferMeta &m)
   std::filesystem::path base = std::filesystem::path(m.local_file_path);
   std::vector<std::filesystem::path> result;
   // list files
+  auto rfp = TryRemoveCloudStoragePrefix(ServiceProvider::GCS, m.bucket, m.remote_file_path);
   google::cloud::storage::ListObjectsReader reader =
-      client_->ListObjects(m.bucket, google::cloud::storage::Prefix(m.remote_file_path));
+      client_->ListObjects(m.bucket, google::cloud::storage::Prefix(rfp));
 
   for (auto const &object : reader) {
     if (!object) {
