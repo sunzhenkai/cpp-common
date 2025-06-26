@@ -273,13 +273,13 @@ void BaseSink<Record, FS>::RollFile() {
   std::string filepath = NextFilePath();
   OpenNewFile(filepath);
   state_.Roll();
-  options_.roll_options.time_roll_policy.Roll();
-  // trigger rolling file
+  // trigger on roll callback
   if (!rotated_files_.empty()) {
     if (options_.on_roll_callback) {
       options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
     }
   }
+  options_.roll_options.time_roll_policy.Roll();
   rotated_files_.push(filepath);
   RemoveOverflowFiles();
 }
