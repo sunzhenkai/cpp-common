@@ -154,9 +154,9 @@ class BaseSink {
     Close();
     if (ofs_) {
       ofs_->Close();
-    }
-    if (options_.on_roll_callback && !rotated_files_.empty()) {
-      options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
+      if (state_.current_row_nums > 0 && options_.on_roll_callback && !rotated_files_.empty()) {
+        options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
+      }
     }
   }
 
