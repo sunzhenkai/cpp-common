@@ -43,9 +43,12 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
         }
       }
       if (ofs_) {
+        Flush();
         auto s = ofs_->Close();
         if (!s.ok()) {
           spdlog::error("[LocalArrowParquetSinkFileSystem] close file failed. [filepath={}]", filepath_);
+        } else {
+          spdlog::info("[LocalArrowParquetSinkFileSystem] close file success. [filepath={}]", filepath_);
         }
       }
     }

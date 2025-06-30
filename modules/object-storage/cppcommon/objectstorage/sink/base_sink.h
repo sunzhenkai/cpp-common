@@ -150,7 +150,7 @@ class BaseSink {
   explicit BaseSink(Options &&options)
       : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
-  ~BaseSink() {
+  virtual ~BaseSink() {
     Close();
     if (ofs_) {
       ofs_->Close();
@@ -274,10 +274,8 @@ void BaseSink<Record, FS>::RollFile() {
   OpenNewFile(filepath);
   state_.Roll();
   // trigger on roll callback
-  if (!rotated_files_.empty()) {
-    if (options_.on_roll_callback) {
-      options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
-    }
+  if (!rotated_files_.empty() && options_.on_roll_callback) {
+    options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
   }
   options_.roll_options.time_roll_policy.Roll();
   rotated_files_.push(filepath);
