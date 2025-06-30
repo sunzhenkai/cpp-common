@@ -4,6 +4,8 @@
 #include <alibabacloud/oss/auth/CredentialsProvider.h>
 
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -81,7 +83,13 @@ absl::StatusOr<FileList> OssStorageProvider::List(const std::string &bucket, con
 }
 
 absl::Status OssStorageProvider::Upload(const TransferMeta &meta) {
-  auto outcome = client_->PutObject(meta.bucket, meta.remote_file_path, meta.local_file_path);
+  std::shared_ptr<std::iostream> fin =
+      std::make_shared<std::fstream>(meta.local_file_path, std::ios::in | std::ios::binary);
+  if (!fin->good()) {
+    return absl::InternalError("cannot open file " + meta.local_file_path);
+  }
+  oss::PutObjectRequest request(meta.bucket, meta.remote_file_path, fin);
+  auto outcome = client_->PutObject(request);
   if (!outcome.isSuccess()) {
     return absl::InternalError(
         absl::StrFormat("OSS Upload failed: code=%s, message=%s", outcome.error().Code(), outcome.error().Message()));
