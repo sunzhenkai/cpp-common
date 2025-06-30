@@ -150,7 +150,7 @@ class BaseSink {
   explicit BaseSink(Options &&options)
       : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
-  ~BaseSink() {
+  virtual ~BaseSink() {
     Close();
     if (ofs_) {
       ofs_->Close();
