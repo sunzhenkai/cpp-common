@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "cppcommon/objectstorage/api.h"
 #include "cppcommon/objectstorage/sink/base_sink.h"
@@ -78,5 +79,35 @@ TEST(Sink, Long) {
     spdlog::info("<< {}", msg);
     s.Write(msg);
     std::this_thread::sleep_for(0.1s);
+  }
+}
+
+TEST(Sink, Mt) {
+  LocalBasicSink::Options options{
+      .name = "runtime",
+      .roll_options{
+          .max_rows_per_file = 100 * 10000,
+      },
+      .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); }};
+  LocalBasicSink s(std::move(options));
+
+  std::atomic<int> counter(0);
+  constexpr int kThreadCount = 8;
+  constexpr int kWritesPerThread = 100 * 10000;
+
+  auto writer = [&] {
+    for (int i = 0; i < kWritesPerThread; ++i) {
+      int idx = counter.fetch_add(1, std::memory_order_relaxed);
+      s.Write("data_" + std::to_string(idx));  // 带索引的写入
+    }
+  };
+
+  std::vector<std::thread> threads;
+  for (int i = 0; i < kThreadCount; ++i) {
+    threads.emplace_back(writer);
+  }
+
+  for (auto &t : threads) {
+    t.join();
   }
 }

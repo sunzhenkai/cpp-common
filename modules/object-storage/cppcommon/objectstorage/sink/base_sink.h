@@ -24,7 +24,7 @@
 #include <thread>
 #include <utility>
 
-#include "boost/lockfree/queue.hpp"
+// #include "boost/lockfree/queue.hpp"
 #include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
 
@@ -152,7 +152,7 @@ class BaseSink {
   };
 
   explicit BaseSink(Options &&options)
-      : queue_(options_.notify_batch_size * 1.2),
+      :  // queue_(options_.notify_batch_size * 1.2),
         options_(std::move(options)),
         writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
@@ -169,11 +169,12 @@ class BaseSink {
   template <typename T>
   void Write(T &&record) {
     if (state_.stopped_) return;
-    ++write_count_;
+    write_count_.fetch_add(1, std::memory_order_release);
     {
+      std::unique_lock lock(queue_mutex_);
       queue_.emplace(std::forward<T>(record));
     }
-    if (write_count_ % options_.notify_batch_size == 0) {
+    if (write_count_.load(std::memory_order_acquire) % options_.notify_batch_size == 0) {
       cv_.notify_one();
     }
   }
@@ -193,8 +194,9 @@ class BaseSink {
 
   std::mutex mutex_;
   std::condition_variable cv_;
-  // std::queue<Record> queue_;
-  boost::lockfree::queue<Record> queue_;
+  std::queue<Record> queue_;
+  std::mutex queue_mutex_;
+  // boost::lockfree::queue<Record> queue_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
@@ -244,27 +246,24 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
   while (true) {
     if (queue_.empty() && state_.stopped_) break;
 
-    Record record;
     {
       // try wait only if queue is empty
       if (queue_.empty()) {
         std::unique_lock lock(mutex_);
         cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
-      }
-      if (!queue_.empty()) {
-        record = std::move(queue_.front());
-        queue_.pop();
       } else {
-        continue;
+        if (IsRoll()) {
+          RollFile();
+        }
+
+        {
+          std::unique_lock lock(queue_mutex_);
+          if (ofs_) {
+            state_.current_row_nums += ofs_->Write(std::forward<Record>(queue_.front()));
+          }
+          queue_.pop();
+        }
       }
-    }
-
-    if (IsRoll()) {
-      RollFile();
-    }
-
-    if (ofs_) {
-      state_.current_row_nums += ofs_->Write(std::forward<Record>(record));
     }
   }
 }
