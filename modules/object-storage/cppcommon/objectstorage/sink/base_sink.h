@@ -242,12 +242,15 @@ void BaseSink<Record, FS>::Close() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::WriteThreadFunc() {
   while (true) {
+    if (queue_.empty() && state_.stopped_) break;
+
     Record record;
     {
-      std::unique_lock lock(mutex_);
-      cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
-
-      if (queue_.empty() && state_.stopped_) break;
+      // try wait only if queue is empty
+      if (queue_.empty()) {
+        std::unique_lock lock(mutex_);
+        cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
+      }
       if (!queue_.empty()) {
         record = std::move(queue_.front());
         queue_.pop();
