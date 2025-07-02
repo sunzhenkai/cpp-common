@@ -9,6 +9,7 @@
 #include <fmt/format.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
@@ -23,6 +24,7 @@
 #include <thread>
 #include <utility>
 
+#include "boost/lockfree/queue.hpp"
 #include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
 
@@ -134,6 +136,8 @@ class BaseSink {
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
     // size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
+
+    int notify_batch_size{10000};
   };
 
   struct State {
@@ -148,7 +152,9 @@ class BaseSink {
   };
 
   explicit BaseSink(Options &&options)
-      : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
+      : queue_(options_.notify_batch_size * 1.2),
+        options_(std::move(options)),
+        writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
   virtual ~BaseSink() {
     Close();
@@ -162,13 +168,14 @@ class BaseSink {
 
   template <typename T>
   void Write(T &&record) {
+    if (state_.stopped_) return;
+    ++write_count_;
     {
-      std::unique_lock lock(mutex_);
-      // cv_.wait(lock, [&] { return state_.stopped_ || queue_.size() < options_.max_inflight_nums; });
-      if (state_.stopped_) return;
       queue_.emplace(std::forward<T>(record));
     }
-    cv_.notify_one();
+    if (write_count_ % options_.notify_batch_size == 0) {
+      cv_.notify_one();
+    }
   }
   void Close();
 
@@ -186,10 +193,13 @@ class BaseSink {
 
   std::mutex mutex_;
   std::condition_variable cv_;
-  std::queue<Record> queue_;
+  // std::queue<Record> queue_;
+  boost::lockfree::queue<Record> queue_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
+
+  std::atomic<int64_t> write_count_{0};
 };
 
 template <typename Record, typename FS>
