@@ -71,7 +71,7 @@ std::shared_ptr<arrow::RecordBatch> GenRecordBatchV3() {
   s = sb_b.Finish(&arrays[1]);
 
   auto schema = arrow::schema({arrow::field("a", arrow::utf8()), arrow::field("b2", arrow::utf8())});
-  return arrow::RecordBatch::Make(schema, 2, arrays);
+  return arrow::RecordBatch::Make(schema, 1, arrays);
 }
 
 std::shared_ptr<arrow::Table> GenTable() {

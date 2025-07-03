@@ -26,6 +26,24 @@ TEST(Sink, CsvBase) {
   s.Write(CsvRow{"a"});
   s.Write(CsvRow{"b"});
   s.Write(CsvRow{"c"});
+  s.Write(CsvRow{","});
+  s.Write(CsvRow{"\n"});
+  s.Write(CsvRow{"\""});
+}
+
+TEST(Sink, CsvEsc) {
+  CsvSink::Options options{.name = "runtime",
+                           .name_options{.suffix = "csv"},
+                           .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); }};
+  CsvSink s(std::move(options));
+  s.Write(CsvRow{"a"});
+  s.Write(CsvRow{"b"});
+  s.Write(CsvRow{"c"});
+  s.Write(CsvRow{","});
+  s.Write(CsvRow{"\n"});
+  s.Write(CsvRow{"\""});
+  s.Write(CsvRow{"\"\""});
+  s.Write(CsvRow{"\r\n"});
 }
 
 TEST(Sink, CsvMt) {
