@@ -73,7 +73,7 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
 
 class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::Table>> {
  public:
-  inline int Write(std::shared_ptr<arrow::Table> &&record) override {
+  inline int Write(const std::shared_ptr<arrow::Table> &record) override {
     if (!writer_) {
       std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
       // .compression(arrow::Compression::SNAPPY)
@@ -95,7 +95,7 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
 
 class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
  public:
-  inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
+  inline int Write(const std::shared_ptr<arrow::RecordBatch> &record) override {
     if (!writer_) {
       std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
       // .compression(arrow::Compression::SNAPPY)

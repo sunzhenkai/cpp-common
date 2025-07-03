@@ -35,7 +35,7 @@ class SinkFileSystem {
  public:
   virtual void Open(const std::string &filepath) = 0;
   // @return number of writted lines
-  virtual int Write(Record &&record) = 0;
+  virtual int Write(const Record &record) = 0;
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
@@ -255,12 +255,11 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
         if (IsRoll()) {
           RollFile();
         }
-
+        if (ofs_) {
+          state_.current_row_nums += ofs_->Write(queue_.front());
+        }
         {
           std::unique_lock lock(queue_mutex_);
-          if (ofs_) {
-            state_.current_row_nums += ofs_->Write(std::forward<Record>(queue_.front()));
-          }
           queue_.pop();
         }
       }

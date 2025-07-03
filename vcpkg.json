@@ -14,7 +14,6 @@
           "features": ["filesystem", "parquet", "s3"]
         },
         "aliyun-oss-cpp-sdk",
-        "boost-lockfree",
         {
           "name": "google-cloud-cpp",
           "default-features": false,

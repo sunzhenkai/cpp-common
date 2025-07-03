@@ -4,7 +4,6 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 find_package(Arrow CONFIG REQUIRED)
 find_package(Parquet CONFIG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS lockfree)
 find_package(unofficial-aliyun-oss-cpp-sdk CONFIG REQUIRED)
 find_package(google_cloud_cpp_common CONFIG REQUIRED)
 find_package(google_cloud_cpp_rest_internal CONFIG REQUIRED)
@@ -20,7 +19,7 @@ set(OS_THIRD_LIBRARIES
     google-cloud-cpp::storage
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Arrow::arrow_static,Arrow::arrow_shared>"
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Parquet::parquet_static,Parquet::parquet_shared>"
-    Boost::lockfree)
+)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB_RECURSE OS_LIB_HREADERS ${CMAKE_CURRENT_SOURCE_DIR}/cppcommon/*.h)

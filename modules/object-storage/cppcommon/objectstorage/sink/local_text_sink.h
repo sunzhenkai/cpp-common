@@ -35,7 +35,7 @@ class LocalSinkFileSystem : public SinkFileSystem<Record> {
 
 class LocalTextSinkFileSystem : public LocalSinkFileSystem<std::string> {
  public:
-  inline int Write(std::string &&record) override {
+  inline int Write(const std::string &record) override {
     ofs_ << record << "\n";
     return 1;
   }

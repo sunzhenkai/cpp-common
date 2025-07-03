@@ -98,7 +98,7 @@ TEST(Sink, Mt) {
   auto writer = [&] {
     for (int i = 0; i < kWritesPerThread; ++i) {
       int idx = counter.fetch_add(1, std::memory_order_relaxed);
-      s.Write("data_" + std::to_string(idx));  // 带索引的写入
+      s.Write("data_" + std::to_string(idx));
     }
   };
 
