@@ -151,9 +151,7 @@ class BaseSink {
   };
 
   explicit BaseSink(Options &&options)
-      :  // queue_(options_.notify_batch_size * 1.2),
-        options_(std::move(options)),
-        writer_thread_(&BaseSink::WriteThreadFunc, this) {}
+      : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
   virtual ~BaseSink() {
     Close();
