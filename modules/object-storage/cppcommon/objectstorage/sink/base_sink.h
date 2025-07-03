@@ -268,6 +268,7 @@ template <typename Record, typename FS>
 void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   if (ofs_) {
     ofs_->Close();
+    ofs_.reset();
   }
   ofs_ = std::make_shared<FS>();
   ofs_->Open(filepath);

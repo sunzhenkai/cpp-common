@@ -36,21 +36,24 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
 
   void Close() override {
     if (ofs_) {
+      Flush();
       if (writer_) {
         auto s = writer_->Close();
+        writer_.reset();
         if (!s.ok()) {
           spdlog::error("[LocalArrowParquetSinkFileSystem] close file failed. [filepath={}]", filepath_);
         }
       }
-      if (ofs_) {
-        Flush();
+      /* ofs_ */ {
         auto s = ofs_->Close();
+        ofs_.reset();
         if (!s.ok()) {
           spdlog::error("[LocalArrowParquetSinkFileSystem] close file failed. [filepath={}]", filepath_);
         } else {
           spdlog::info("[LocalArrowParquetSinkFileSystem] close file success. [filepath={}]", filepath_);
         }
       }
+      spdlog::info("[LocalArrowParquetSinkFileSystem] close file. [filepath={}]", filepath_);
     }
   }
 
@@ -96,6 +99,10 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
 class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
  public:
   inline int Write(const std::shared_ptr<arrow::RecordBatch> &record) override {
+    if (!ofs_) {
+      spdlog::error("write arrow::RecordBatch failed, file stream not ready.");
+      return 0;
+    }
     if (!writer_) {
       std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
       // .compression(arrow::Compression::SNAPPY)
