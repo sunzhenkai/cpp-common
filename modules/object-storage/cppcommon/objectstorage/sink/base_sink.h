@@ -266,8 +266,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   if (ofs_) {
-    auto ofs = std::move(ofs_);
-    std::thread([ofs = std::move(ofs)]() mutable { ofs->Close(); }).detach();
+    std::thread([ofs = std::move(ofs_)]() mutable { ofs->Close(); }).detach();
     ofs_.reset();
   }
   ofs_ = std::make_shared<FS>();
