@@ -9,6 +9,7 @@
 #include <fmt/format.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
@@ -33,7 +34,7 @@ class SinkFileSystem {
  public:
   virtual void Open(const std::string &filepath) = 0;
   // @return number of writted lines
-  virtual int Write(Record &&record) = 0;
+  virtual int Write(const Record &record) = 0;
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
@@ -134,6 +135,8 @@ class BaseSink {
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
     // size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
+
+    int notify_batch_size{10000};
   };
 
   struct State {
@@ -162,13 +165,15 @@ class BaseSink {
 
   template <typename T>
   void Write(T &&record) {
+    if (state_.stopped_) return;
+    write_count_.fetch_add(1, std::memory_order_release);
     {
-      std::unique_lock lock(mutex_);
-      // cv_.wait(lock, [&] { return state_.stopped_ || queue_.size() < options_.max_inflight_nums; });
-      if (state_.stopped_) return;
+      std::unique_lock lock(queue_mutex_);
       queue_.emplace(std::forward<T>(record));
     }
-    cv_.notify_one();
+    if (write_count_.load(std::memory_order_acquire) % options_.notify_batch_size == 0) {
+      cv_.notify_one();
+    }
   }
   void Close();
 
@@ -184,12 +189,15 @@ class BaseSink {
   Options options_;
   State state_{};
 
-  std::mutex mutex_;
   std::condition_variable cv_;
+  std::mutex cv_mutex_;
   std::queue<Record> queue_;
+  std::mutex queue_mutex_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
+
+  std::atomic<int64_t> write_count_{0};
 };
 
 template <typename Record, typename FS>
@@ -222,7 +230,7 @@ void BaseSink<Record, FS>::RemoveOverflowFiles() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::Close() {
   {
-    std::lock_guard lock(mutex_);
+    std::lock_guard lock(cv_mutex_);
     state_.stopped_ = true;
   }
   cv_.notify_all();
@@ -232,26 +240,26 @@ void BaseSink<Record, FS>::Close() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::WriteThreadFunc() {
   while (true) {
-    Record record;
+    if (queue_.empty() && state_.stopped_) break;
+
     {
-      std::unique_lock lock(mutex_);
-      cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
-
-      if (queue_.empty() && state_.stopped_) break;
-      if (!queue_.empty()) {
-        record = std::move(queue_.front());
-        queue_.pop();
+      // try wait only if queue is empty
+      if (queue_.empty()) {
+        std::unique_lock lock(cv_mutex_);
+        cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
       } else {
-        continue;
+        if (IsRoll()) {
+          RollFile();
+        }
+        if (ofs_) {
+          // NOTE: only one write thread (consumer thread)
+          state_.current_row_nums += ofs_->Write(queue_.front());
+        }
+        {
+          std::unique_lock lock(queue_mutex_);
+          queue_.pop();
+        }
       }
-    }
-
-    if (IsRoll()) {
-      RollFile();
-    }
-
-    if (ofs_) {
-      state_.current_row_nums += ofs_->Write(std::forward<Record>(record));
     }
   }
 }

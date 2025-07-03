@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "cppcommon/objectstorage/api.h"
 #include "cppcommon/objectstorage/sink/base_sink.h"
@@ -97,7 +98,7 @@ TEST(Sink, Mt) {
   auto writer = [&] {
     for (int i = 0; i < kWritesPerThread; ++i) {
       int idx = counter.fetch_add(1, std::memory_order_relaxed);
-      s.Write("data_" + std::to_string(idx));  // 带索引的写入
+      s.Write("data_" + std::to_string(idx));
     }
   };
 
@@ -109,4 +110,6 @@ TEST(Sink, Mt) {
   for (auto &t : threads) {
     t.join();
   }
+
+  // std::this_thread::sleep_for(std::chrono::seconds(10));
 }
