@@ -92,8 +92,8 @@ TEST(Sink, Mt) {
   LocalBasicSink s(std::move(options));
 
   std::atomic<int> counter(0);
-  constexpr int kThreadCount = 1;
-  constexpr int kWritesPerThread = 10000 * 1000;
+  constexpr int kThreadCount = 8;
+  constexpr int kWritesPerThread = 10000 * 100;
 
   auto writer = [&] {
     for (int i = 0; i < kWritesPerThread; ++i) {
