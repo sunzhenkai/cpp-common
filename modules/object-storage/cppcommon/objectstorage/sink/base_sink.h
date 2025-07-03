@@ -19,6 +19,7 @@
 #include <mutex>
 #include <ostream>
 #include <queue>
+#include <shared_mutex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -135,8 +136,6 @@ class BaseSink {
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
     // size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
-
-    int notify_batch_size{10000};
   };
 
   struct State {
@@ -166,15 +165,18 @@ class BaseSink {
   template <typename T>
   void Write(T &&record) {
     if (state_.stopped_) return;
-    write_count_.fetch_add(1, std::memory_order_release);
     {
       std::unique_lock lock(queue_mutex_);
       queue_.emplace(std::forward<T>(record));
     }
-    if (write_count_.load(std::memory_order_acquire) % options_.notify_batch_size == 0) {
-      cv_.notify_one();
-    }
+    cv_.notify_one();
   }
+
+  inline size_t Size() const {
+    std::shared_lock lock(queue_mutex_);
+    return queue_.size();
+  }
+
   void Close();
 
  protected:
@@ -192,12 +194,10 @@ class BaseSink {
   std::condition_variable cv_;
   std::mutex cv_mutex_;
   std::queue<Record> queue_;
-  std::mutex queue_mutex_;
+  std::shared_mutex queue_mutex_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
-
-  std::atomic<int64_t> write_count_{0};
 };
 
 template <typename Record, typename FS>
@@ -268,6 +268,7 @@ template <typename Record, typename FS>
 void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   if (ofs_) {
     ofs_->Close();
+    ofs_.reset();
   }
   ofs_ = std::make_shared<FS>();
   ofs_->Open(filepath);

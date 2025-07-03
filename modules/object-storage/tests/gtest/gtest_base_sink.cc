@@ -93,7 +93,7 @@ TEST(Sink, Mt) {
 
   std::atomic<int> counter(0);
   constexpr int kThreadCount = 8;
-  constexpr int kWritesPerThread = 100 * 10000;
+  constexpr int kWritesPerThread = 10000 * 100;
 
   auto writer = [&] {
     for (int i = 0; i < kWritesPerThread; ++i) {
