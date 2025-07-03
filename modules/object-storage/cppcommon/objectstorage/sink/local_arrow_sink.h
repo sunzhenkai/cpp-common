@@ -152,7 +152,9 @@ class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_pt
         if (!s.ok()) {
           spdlog::error("write arrow::Table failed. [error={}]", s.ToString());
         }
+        table.reset();
       }
+      records_.clear();
     }
 
     LocalArrowSinkFileSystem::Close();

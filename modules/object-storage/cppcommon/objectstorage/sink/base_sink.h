@@ -253,6 +253,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
         if (ofs_) {
           // NOTE: only one write thread (consumer thread)
           state_.current_row_nums += ofs_->Write(queue_.front());
+          queue_.front().reset();
         }
         {
           std::unique_lock lock(queue_mutex_);
@@ -266,7 +267,8 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   if (ofs_) {
-    std::thread([ofs = std::move(ofs_)]() mutable { ofs->Close(); }).detach();
+    ofs_->Close();
+    // std::thread([ofs = std::move(ofs_)]() mutable { ofs->Close(); }).detach();
     ofs_.reset();
   }
   ofs_ = std::make_shared<FS>();
