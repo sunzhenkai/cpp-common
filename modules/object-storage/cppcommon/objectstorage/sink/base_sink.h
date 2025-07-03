@@ -192,8 +192,8 @@ class BaseSink {
   Options options_;
   State state_{};
 
-  std::mutex mutex_;
   std::condition_variable cv_;
+  std::mutex cv_mutex_;
   std::queue<Record> queue_;
   std::mutex queue_mutex_;
   // boost::lockfree::queue<Record> queue_;
@@ -234,7 +234,7 @@ void BaseSink<Record, FS>::RemoveOverflowFiles() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::Close() {
   {
-    std::lock_guard lock(mutex_);
+    std::lock_guard lock(cv_mutex_);
     state_.stopped_ = true;
   }
   cv_.notify_all();
@@ -249,7 +249,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
     {
       // try wait only if queue is empty
       if (queue_.empty()) {
-        std::unique_lock lock(mutex_);
+        std::unique_lock lock(cv_mutex_);
         cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
       } else {
         if (IsRoll()) {
