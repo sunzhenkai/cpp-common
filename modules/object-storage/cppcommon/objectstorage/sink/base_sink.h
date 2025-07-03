@@ -239,8 +239,7 @@ void BaseSink<Record, FS>::Close() {
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::WriteThreadFunc() {
-  while (true) {
-    if (queue_.empty() && state_.stopped_) break;
+  while (!state_.stopped_ || !queue_.empty()) {
     {
       // try wait only if queue is empty
       if (queue_.empty()) {

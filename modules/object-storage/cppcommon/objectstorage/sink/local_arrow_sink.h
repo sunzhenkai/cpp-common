@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "cppcommon/objectstorage/sink/base_sink.h"
@@ -129,8 +130,9 @@ class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_pt
  public:
   inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
     std::cout << "CKPT use_count: " << record.use_count() << std::endl;
+    auto count = record->num_rows();
     records_.emplace_back(std::move(record));
-    return record->num_rows();
+    return count;
   }
 
   void Close() override {
