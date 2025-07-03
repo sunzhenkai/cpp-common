@@ -135,8 +135,7 @@ class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_pt
   void Close() override {
     if (!records_.empty()) {
       auto record = records_.front();
-      std::shared_ptr<parquet::WriterProperties> props =
-          parquet::WriterProperties::Builder().max_row_group_length(1024 * 10)->build();
+      std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
       // .compression(arrow::Compression::SNAPPY)
       std::shared_ptr<parquet::ArrowWriterProperties> arrow_props =
           parquet::ArrowWriterProperties::Builder().set_use_threads(false)->build();
