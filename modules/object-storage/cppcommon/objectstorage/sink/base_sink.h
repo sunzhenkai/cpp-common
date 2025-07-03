@@ -252,6 +252,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
           RollFile();
         }
         if (ofs_) {
+          // NOTE: only one write thread (consumer thread)
           state_.current_row_nums += ofs_->Write(queue_.front());
         }
         {
