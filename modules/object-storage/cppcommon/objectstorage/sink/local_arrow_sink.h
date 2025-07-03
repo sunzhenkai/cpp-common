@@ -104,10 +104,11 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
       return 0;
     }
     if (!writer_) {
-      std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
+      std::shared_ptr<parquet::WriterProperties> props =
+          parquet::WriterProperties::Builder().max_row_group_length(1024 * 10)->build();
       // .compression(arrow::Compression::SNAPPY)
       std::shared_ptr<parquet::ArrowWriterProperties> arrow_props =
-          parquet::ArrowWriterProperties::Builder().store_schema()->build();
+          parquet::ArrowWriterProperties::Builder().set_use_threads(false)->build();
       writer_ = parquet::arrow::FileWriter::Open(*record->schema().get(), arrow::default_memory_pool(), ofs_, props,
                                                  arrow_props)
                     .ValueOrDie();
