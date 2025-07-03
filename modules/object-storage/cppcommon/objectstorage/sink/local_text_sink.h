@@ -27,8 +27,6 @@ class LocalSinkFileSystem : public SinkFileSystem<Record> {
     if (ofs_) ofs_.flush();
   }
 
-  static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
-
  protected:
   std::ofstream ofs_;
 };

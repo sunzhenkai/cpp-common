@@ -9,8 +9,6 @@
 #include <fmt/format.h>
 #include <unistd.h>
 
-#include <atomic>
-#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
@@ -20,7 +18,6 @@
 #include <mutex>
 #include <ostream>
 #include <queue>
-#include <shared_mutex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -41,8 +38,7 @@ class SinkFileSystem {
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
-
-  static bool IsExists(const std::string &filepath);
+  inline static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
   virtual ~SinkFileSystem() {
     Flush();
     Close();
@@ -114,7 +110,7 @@ inline std::string GetDateFileName() {
   return di.Format("%Y%m%d_%H%M%S");
 }
 
-template <typename Record, typename FS = SinkFileSystem<Record>>
+template <typename Record, typename FS = SinkFileSystem<Record>, typename OfsOptions = void>
 class BaseSink {
  public:
   struct FileNameOptions {
@@ -138,6 +134,7 @@ class BaseSink {
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
     bool close_in_threads{false};
+    [[no_unique_address]] std::conditional_t<std::is_void_v<OfsOptions>, int, OfsOptions> ofs_options;
   };
 
   struct State {
@@ -194,8 +191,8 @@ class BaseSink {
   std::vector<std::thread> close_threads_{};
 };
 
-template <typename Record, typename FS>
-inline bool BaseSink<Record, FS>::IsRoll() {
+template <typename Record, typename FS, typename OfsOptions>
+inline bool BaseSink<Record, FS, OfsOptions>::IsRoll() {
   if (!ofs_) return true;
   if (!options_.roll_options.is_rotate) return false;
   if (state_.current_row_nums >= options_.roll_options.max_rows_per_file) {
@@ -207,8 +204,8 @@ inline bool BaseSink<Record, FS>::IsRoll() {
   return false;
 }
 
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::RemoveOverflowFiles() {
+template <typename Record, typename FS, typename OfsOptions>
+void BaseSink<Record, FS, OfsOptions>::RemoveOverflowFiles() {
   while (options_.roll_options.max_backup_files > 0 &&
          static_cast<int>(rotated_files_.size()) > options_.roll_options.max_backup_files) {
     auto oldest_fp = rotated_files_.front();
@@ -221,8 +218,8 @@ void BaseSink<Record, FS>::RemoveOverflowFiles() {
   }
 }
 
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::Close() {
+template <typename Record, typename FS, typename OfsOptions>
+void BaseSink<Record, FS, OfsOptions>::Close() {
   // write inflight records
   {
     std::lock_guard lock(cv_mutex_);
@@ -239,8 +236,8 @@ void BaseSink<Record, FS>::Close() {
   close_threads_.clear();
 }
 
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::WriteThreadFunc() {
+template <typename Record, typename FS, typename OfsOptions>
+void BaseSink<Record, FS, OfsOptions>::WriteThreadFunc() {
   while (!state_.stopped_ || !queue_.empty()) {
     {
       // try wait only if queue is empty
@@ -264,9 +261,13 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
   }
 }
 
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
-  ofs_ = std::make_shared<FS>();
+template <typename Record, typename FS, typename OfsOptions>
+void BaseSink<Record, FS, OfsOptions>::OpenNewFile(const std::string &filepath) {
+  if constexpr (std::is_void_v<OfsOptions>) {
+    ofs_ = std::make_shared<FS>();
+  } else {
+    ofs_ = std::make_shared<FS>(options_.ofs_options);
+  }
   ofs_->Open(filepath);
   if (!ofs_->IsOpen()) {
     throw std::runtime_error("Failed to open file: " + filepath);
@@ -279,8 +280,8 @@ struct RollMeta {
   TimeRollPolicy time_roll_policy;
 };
 
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::CloseCurrentFile() {
+template <typename Record, typename FS, typename OfsOptions>
+void BaseSink<Record, FS, OfsOptions>::CloseCurrentFile() {
   RollMeta meta;
   if (!rotated_files_.empty() && options_.on_roll_callback) {
     meta = RollMeta{true, rotated_files_.back(), options_.roll_options.time_roll_policy};
@@ -302,8 +303,8 @@ void BaseSink<Record, FS>::CloseCurrentFile() {
   }
 }
 
-template <typename Record, typename FS>
-void BaseSink<Record, FS>::RollFile() {
+template <typename Record, typename FS, typename OfsOptions>
+void BaseSink<Record, FS, OfsOptions>::RollFile() {
   std::string filepath = NextFilePath();
   CloseCurrentFile();
   OpenNewFile(filepath);
@@ -313,8 +314,8 @@ void BaseSink<Record, FS>::RollFile() {
   RemoveOverflowFiles();
 }
 
-template <typename Record, typename FS>
-std::string BaseSink<Record, FS>::NextFilePath() {
+template <typename Record, typename FS, typename OfsOptions>
+std::string BaseSink<Record, FS, OfsOptions>::NextFilePath() {
   std::string hostname_str;
   if (options_.name_options.name_with_hostname) {
     char hostname[128] = {};
