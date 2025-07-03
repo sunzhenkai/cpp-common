@@ -252,7 +252,7 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
         }
         if (ofs_) {
           // NOTE: only one write thread (consumer thread)
-          state_.current_row_nums += ofs_->Write(std::move(queue_.front()));
+          state_.current_row_nums += ofs_->Write(std::forward<Record>(queue_.front()));
         }
         {
           std::unique_lock lock(queue_mutex_);
