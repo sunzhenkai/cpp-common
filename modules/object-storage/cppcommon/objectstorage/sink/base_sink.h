@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
@@ -136,7 +137,6 @@ class BaseSink {
     FileNameOptions name_options;
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
-    // size_t max_inflight_nums{std::numeric_limits<size_t>::max()};
   };
 
   struct State {
@@ -153,15 +153,7 @@ class BaseSink {
   explicit BaseSink(Options &&options)
       : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
 
-  virtual ~BaseSink() {
-    Close();
-    if (ofs_) {
-      ofs_->Close();
-      if (state_.current_row_nums > 0 && options_.on_roll_callback && !rotated_files_.empty()) {
-        options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
-      }
-    }
-  }
+  virtual ~BaseSink() { Close(); }
 
   template <typename T>
   void Write(T &&record) {
@@ -230,12 +222,16 @@ void BaseSink<Record, FS>::RemoveOverflowFiles() {
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::Close() {
+  // write inflight records
   {
     std::lock_guard lock(cv_mutex_);
     state_.stopped_ = true;
   }
   cv_.notify_all();
   if (writer_thread_.joinable()) writer_thread_.join();
+  // close current file
+  CloseCurrentFile();
+  // wait for file closing threads
   for (auto &td : close_threads_) {
     if (td.joinable()) td.join();
   }

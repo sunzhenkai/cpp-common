@@ -9,6 +9,7 @@
 #include <spdlog/spdlog.h>
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -150,12 +151,12 @@ TEST(Sink, Pmrb) {
       .name = "table",
       .name_options{.suffix = "parquet"},
       .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
-  };
+      .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); }};
   LocalArrowRecordBatchSinkV1 s(std::move(options));
   auto record = GenRecordBatchV2();
 
   constexpr int kThreadCount = 8;
-  constexpr int kWritesPerThread = 10000 * 5;
+  constexpr int kWritesPerThread = 10000 * 5 + 10;
 
   auto writer = [&] {
     for (int i = 0; i < kWritesPerThread; ++i) {
@@ -178,12 +179,12 @@ TEST(Sink, PmrbV2) {
       .name = "table",
       .name_options{.suffix = "parquet"},
       .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
-  };
+      .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); }};
   LocalArrowRecordBatchSink s(std::move(options));
   auto record = GenRecordBatchV2();
 
   constexpr int kThreadCount = 8;
-  constexpr int kWritesPerThread = 10000 * 5;
+  constexpr int kWritesPerThread = 10000 * 5 + 10;
 
   auto writer = [&] {
     for (int i = 0; i < kWritesPerThread; ++i) {
