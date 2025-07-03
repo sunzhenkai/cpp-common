@@ -12,3 +12,4 @@ output*
 *.parquet
 foo*
 output
+*.csv

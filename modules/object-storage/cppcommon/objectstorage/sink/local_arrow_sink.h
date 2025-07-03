@@ -6,9 +6,11 @@
  */
 #pragma once
 #include <arrow/api.h>
+#include <arrow/csv/api.h>
 #include <arrow/filesystem/s3fs.h>
 #include <arrow/io/api.h>
 #include <arrow/io/type_fwd.h>
+#include <arrow/ipc/writer.h>
 #include <arrow/record_batch.h>
 #include <arrow/result.h>
 #include <arrow/status.h>
@@ -28,8 +30,8 @@
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
 namespace cppcommon::os {
-template <typename Record>
-class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
+template <typename Writer, typename Record>
+class ArrowLocalSinkBase : public SinkFileSystem<Record> {
  public:
   void Open(const std::string &filepath) override {
     ofs_ = arrow::io::FileOutputStream::Open(filepath).ValueOrDie();
@@ -45,16 +47,16 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
         auto s = writer_->Close();
         writer_.reset();
         if (!s.ok()) {
-          spdlog::error("[LocalArrowParquetSinkFileSystem] close file failed. [filepath={}]", filepath_);
+          spdlog::error("[ArrowLocalSinkBase] close file failed. [filepath={}]", filepath_);
         }
       }
       /* ofs_ */ {
         auto s = ofs_->Close();
         ofs_.reset();
         if (!s.ok()) {
-          spdlog::error("[LocalArrowParquetSinkFileSystem] close file failed. [filepath={}]", filepath_);
+          spdlog::error("[ArrowLocalSinkBase] close file failed. [filepath={}]", filepath_);
         } else {
-          spdlog::info("[LocalArrowParquetSinkFileSystem] close file success. [filepath={}]", filepath_);
+          spdlog::info("[ArrowLocalSinkBase] close file success. [filepath={}]", filepath_);
         }
       }
     }
@@ -73,11 +75,11 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
 
  protected:
   std::shared_ptr<arrow::io::FileOutputStream> ofs_;
-  std::unique_ptr<parquet::arrow::FileWriter> writer_;
+  std::shared_ptr<Writer> writer_;
   std::string filepath_;
 };
 
-class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::Table>> {
+class ArrowTableParquetWriter : public ArrowLocalSinkBase<parquet::arrow::FileWriter, std::shared_ptr<arrow::Table>> {
  public:
   inline int Write(std::shared_ptr<arrow::Table> &&record) override {
     if (!writer_) {
@@ -99,7 +101,7 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
   }
 };
 
-class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
+class ArrowParquetWriter : public ArrowLocalSinkBase<parquet::arrow::FileWriter, std::shared_ptr<arrow::RecordBatch>> {
  public:
   inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
     if (!ofs_) {
@@ -126,7 +128,8 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
   }
 };
 
-class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
+class ArrowParquetWriterV2
+    : public ArrowLocalSinkBase<parquet::arrow::FileWriter, std::shared_ptr<arrow::RecordBatch>> {
  public:
   inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
     auto count = record->num_rows();
@@ -159,14 +162,36 @@ class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_pt
       records_.clear();
     }
 
-    LocalArrowSinkFileSystem::Close();
+    ArrowLocalSinkBase::Close();
   }
 
  private:
   std::vector<std::shared_ptr<arrow::RecordBatch>> records_;
 };
 
-using LocalArrowTableSink = BaseSink<std::shared_ptr<arrow::Table>, LocalArrowParquetSinkFileSystem>;
-using LocalArrowRecordBatchSinkV1 = BaseSink<std::shared_ptr<arrow::RecordBatch>, LocalArrowRecordBatchFS>;
-using LocalArrowRecordBatchSink = BaseSink<std::shared_ptr<arrow::RecordBatch>, LocalArrowRecordBatchFSV2>;
+class ArrowCsvWriter : public ArrowLocalSinkBase<arrow::ipc::RecordBatchWriter, std::shared_ptr<arrow::RecordBatch>> {
+ public:
+  inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
+    if (!ofs_) {
+      spdlog::error("write arrow::RecordBatch failed, file stream not ready.");
+      return 0;
+    }
+    if (!writer_) {
+      auto ops = arrow::csv::WriteOptions::Defaults();
+      writer_ = arrow::csv::MakeCSVWriter(ofs_, record->schema(), ops).ValueOrDie();
+    }
+    auto s = writer_->WriteRecordBatch(*record);
+    if (s.ok()) {
+      return record->num_rows();
+    } else {
+      spdlog::error("write arrow::RecordBatch failed. [error={}]", s.ToString());
+      return 0;
+    }
+  }
+};
+
+using LocalArrowTableSink = BaseSink<std::shared_ptr<arrow::Table>, ArrowTableParquetWriter>;
+using LocalArrowRecordBatchSinkV1 = BaseSink<std::shared_ptr<arrow::RecordBatch>, ArrowParquetWriter>;
+using LocalArrowRecordBatchSink = BaseSink<std::shared_ptr<arrow::RecordBatch>, ArrowParquetWriterV2>;
+using ArrowCsvLocalSink = BaseSink<std::shared_ptr<arrow::RecordBatch>, ArrowCsvWriter>;
 }  // namespace cppcommon::os
