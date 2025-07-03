@@ -172,10 +172,7 @@ class BaseSink {
     cv_.notify_one();
   }
 
-  inline size_t Size() const {
-    std::shared_lock lock(queue_mutex_);
-    return queue_.size();
-  }
+  inline size_t Size() const { return queue_.size(); }
 
   void Close();
 
@@ -194,7 +191,7 @@ class BaseSink {
   std::condition_variable cv_;
   std::mutex cv_mutex_;
   std::queue<Record> queue_;
-  std::shared_mutex queue_mutex_;
+  std::mutex queue_mutex_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
