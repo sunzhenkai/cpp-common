@@ -129,7 +129,6 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
 class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
  public:
   inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
-    std::cout << "CKPT use_count: " << record.use_count() << std::endl;
     auto count = record->num_rows();
     records_.emplace_back(std::move(record));
     return count;

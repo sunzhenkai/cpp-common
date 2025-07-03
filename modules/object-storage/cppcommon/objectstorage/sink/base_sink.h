@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
@@ -182,6 +183,7 @@ class BaseSink {
   std::string NextFilePath();
   bool IsRoll();
   void RemoveOverflowFiles();
+  void CloseCurrentFile();
   void OpenNewFile(const std::string &filepath);
 
  protected:
@@ -195,6 +197,8 @@ class BaseSink {
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
+
+  std::vector<std::thread> close_threads_{};
 };
 
 template <typename Record, typename FS>
@@ -232,6 +236,10 @@ void BaseSink<Record, FS>::Close() {
   }
   cv_.notify_all();
   if (writer_thread_.joinable()) writer_thread_.join();
+  for (auto &td : close_threads_) {
+    if (td.joinable()) td.join();
+  }
+  close_threads_.clear();
 }
 
 template <typename Record, typename FS>
@@ -261,11 +269,6 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
-  if (ofs_) {
-    ofs_->Close();
-    // std::thread([ofs = std::move(ofs_)]() mutable { ofs->Close(); }).detach();
-    ofs_.reset();
-  }
   ofs_ = std::make_shared<FS>();
   ofs_->Open(filepath);
   if (!ofs_->IsOpen()) {
@@ -273,15 +276,37 @@ void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   }
 }
 
+struct RollMeta {
+  bool is_roll{false};
+  std::string filepath;
+  TimeRollPolicy time_roll_policy;
+};
+
+template <typename Record, typename FS>
+void BaseSink<Record, FS>::CloseCurrentFile() {
+  RollMeta meta;
+  if (!rotated_files_.empty() && options_.on_roll_callback) {
+    meta = RollMeta{true, rotated_files_.back(), options_.roll_options.time_roll_policy};
+  }
+
+  auto f = [meta = meta, ofs = std::move(ofs_), ops = &options_]() mutable {
+    if (ofs) {
+      ofs->Close();
+      ofs.reset();
+    }
+    if (meta.is_roll) {
+      ops->on_roll_callback(meta.filepath, meta.time_roll_policy);
+    }
+  };
+  close_threads_.emplace_back(std::thread(std::move(f)));
+}
+
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::RollFile() {
   std::string filepath = NextFilePath();
+  CloseCurrentFile();
   OpenNewFile(filepath);
   state_.Roll();
-  // trigger on roll callback
-  if (!rotated_files_.empty() && options_.on_roll_callback) {
-    options_.on_roll_callback(rotated_files_.back(), options_.roll_options.time_roll_policy);
-  }
   options_.roll_options.time_roll_policy.Roll();
   rotated_files_.push(filepath);
   RemoveOverflowFiles();
