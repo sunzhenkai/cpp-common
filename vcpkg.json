@@ -11,7 +11,7 @@
       "dependencies": [
         {
           "name": "arrow",
-          "features": ["filesystem", "parquet", "s3"]
+          "features": ["filesystem", "parquet", "s3", "csv"]
         },
         "aliyun-oss-cpp-sdk",
         {
