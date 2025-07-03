@@ -87,6 +87,34 @@ TEST(Sink, ParquetV2) {
   // s.Write(GenTableV2()); // different schema is forbidden
 }
 
+TEST(Sink, Pmt) {
+  LocalArrowTableSink::Options options{
+      .name = "table",
+      .name_options{.suffix = "parquet"},
+      .roll_options{.is_rotate = false},
+  };
+  LocalArrowTableSink s(std::move(options));
+  auto table = GenTable();
+
+  constexpr int kThreadCount = 8;
+  constexpr int kWritesPerThread = 10000 * 10;
+
+  auto writer = [&] {
+    for (int i = 0; i < kWritesPerThread; ++i) {
+      s.Write(table);
+    }
+  };
+
+  std::vector<std::thread> threads;
+  for (int i = 0; i < kThreadCount; ++i) {
+    threads.emplace_back(writer);
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+}
+
 using arrow::fs::S3FileSystem;
 using arrow::fs::S3Options;
 TEST(Sink, OSS) {
@@ -114,5 +142,61 @@ TEST(Sink, OSS) {
     auto out = fs->OpenOutputStream(outpath).ValueOrDie();
     auto s = parquet::arrow::WriteTable(*tb, arrow::default_memory_pool(), out, 1024);
     spdlog::info("{}", s.ToString());
+  }
+}
+
+TEST(Sink, Pmrb) {
+  LocalArrowRecordBatchSinkV1::Options options{
+      .name = "table",
+      .name_options{.suffix = "parquet"},
+      .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
+  };
+  LocalArrowRecordBatchSinkV1 s(std::move(options));
+  auto record = GenRecordBatchV2();
+
+  constexpr int kThreadCount = 8;
+  constexpr int kWritesPerThread = 10000 * 5;
+
+  auto writer = [&] {
+    for (int i = 0; i < kWritesPerThread; ++i) {
+      s.Write(record);
+    }
+  };
+
+  std::vector<std::thread> threads;
+  for (int i = 0; i < kThreadCount; ++i) {
+    threads.emplace_back(writer);
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+}
+
+TEST(Sink, PmrbV2) {
+  LocalArrowRecordBatchSink::Options options{
+      .name = "table",
+      .name_options{.suffix = "parquet"},
+      .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
+  };
+  LocalArrowRecordBatchSink s(std::move(options));
+  auto record = GenRecordBatchV2();
+
+  constexpr int kThreadCount = 8;
+  constexpr int kWritesPerThread = 10000 * 5;
+
+  auto writer = [&] {
+    for (int i = 0; i < kWritesPerThread; ++i) {
+      s.Write(record);
+    }
+  };
+
+  std::vector<std::thread> threads;
+  for (int i = 0; i < kThreadCount; ++i) {
+    threads.emplace_back(writer);
+  }
+
+  for (auto &t : threads) {
+    t.join();
   }
 }

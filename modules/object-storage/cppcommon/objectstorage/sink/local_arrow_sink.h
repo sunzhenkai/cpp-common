@@ -9,6 +9,7 @@
 #include <arrow/filesystem/s3fs.h>
 #include <arrow/io/api.h>
 #include <arrow/io/type_fwd.h>
+#include <arrow/record_batch.h>
 #include <arrow/result.h>
 #include <arrow/status.h>
 #include <arrow/type.h>
@@ -18,8 +19,10 @@
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
+#include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
@@ -53,7 +56,6 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
           spdlog::info("[LocalArrowParquetSinkFileSystem] close file success. [filepath={}]", filepath_);
         }
       }
-      spdlog::info("[LocalArrowParquetSinkFileSystem] close file. [filepath={}]", filepath_);
     }
   }
 
@@ -81,7 +83,7 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
       std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
       // .compression(arrow::Compression::SNAPPY)
       std::shared_ptr<parquet::ArrowWriterProperties> arrow_props =
-          parquet::ArrowWriterProperties::Builder().store_schema()->build();
+          parquet::ArrowWriterProperties::Builder().set_use_threads(false)->build();
       writer_ = parquet::arrow::FileWriter::Open(*record->schema().get(), arrow::default_memory_pool(), ofs_, props,
                                                  arrow_props)
                     .ValueOrDie();
@@ -123,6 +125,44 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
   }
 };
 
+class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
+ public:
+  inline int Write(const std::shared_ptr<arrow::RecordBatch> &record) override {
+    records_.emplace_back(record);
+    return record->num_rows();
+  }
+
+  void Close() override {
+    if (!records_.empty()) {
+      auto record = records_.front();
+      std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
+      // .compression(arrow::Compression::SNAPPY)
+      std::shared_ptr<parquet::ArrowWriterProperties> arrow_props =
+          parquet::ArrowWriterProperties::Builder().set_use_threads(false)->build();
+      writer_ = parquet::arrow::FileWriter::Open(*record->schema().get(), arrow::default_memory_pool(), ofs_, props,
+                                                 arrow_props)
+                    .ValueOrDie();
+
+      auto maybe_table = arrow::Table::FromRecordBatches(records_);
+      if (!maybe_table.ok()) {
+        spdlog::error("sink arrow RecordBatch failed: {}", maybe_table.status().ToString());
+      } else {
+        std::shared_ptr<arrow::Table> table = maybe_table.ValueOrDie();
+        auto s = writer_->WriteTable(*table);
+        if (!s.ok()) {
+          spdlog::error("write arrow::Table failed. [error={}]", s.ToString());
+        }
+      }
+    }
+
+    LocalArrowSinkFileSystem::Close();
+  }
+
+ private:
+  std::vector<std::shared_ptr<arrow::RecordBatch>> records_;
+};
+
 using LocalArrowTableSink = BaseSink<std::shared_ptr<arrow::Table>, LocalArrowParquetSinkFileSystem>;
-using LocalArrowRecordBatchSink = BaseSink<std::shared_ptr<arrow::RecordBatch>, LocalArrowRecordBatchFS>;
+using LocalArrowRecordBatchSinkV1 = BaseSink<std::shared_ptr<arrow::RecordBatch>, LocalArrowRecordBatchFS>;
+using LocalArrowRecordBatchSink = BaseSink<std::shared_ptr<arrow::RecordBatch>, LocalArrowRecordBatchFSV2>;
 }  // namespace cppcommon::os
