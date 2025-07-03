@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "cppcommon/objectstorage/sink/base_sink.h"
@@ -78,7 +79,7 @@ class LocalArrowSinkFileSystem : public SinkFileSystem<Record> {
 
 class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::Table>> {
  public:
-  inline int Write(const std::shared_ptr<arrow::Table> &record) override {
+  inline int Write(std::shared_ptr<arrow::Table> &&record) override {
     if (!writer_) {
       std::shared_ptr<parquet::WriterProperties> props = parquet::WriterProperties::Builder().build();
       // .compression(arrow::Compression::SNAPPY)
@@ -100,7 +101,7 @@ class LocalArrowParquetSinkFileSystem : public LocalArrowSinkFileSystem<std::sha
 
 class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
  public:
-  inline int Write(const std::shared_ptr<arrow::RecordBatch> &record) override {
+  inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
     if (!ofs_) {
       spdlog::error("write arrow::RecordBatch failed, file stream not ready.");
       return 0;
@@ -127,9 +128,10 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
 
 class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_ptr<arrow::RecordBatch>> {
  public:
-  inline int Write(const std::shared_ptr<arrow::RecordBatch> &record) override {
-    records_.emplace_back(record);
-    return record->num_rows();
+  inline int Write(std::shared_ptr<arrow::RecordBatch> &&record) override {
+    auto count = record->num_rows();
+    records_.emplace_back(std::move(record));
+    return count;
   }
 
   void Close() override {
@@ -152,7 +154,9 @@ class LocalArrowRecordBatchFSV2 : public LocalArrowSinkFileSystem<std::shared_pt
         if (!s.ok()) {
           spdlog::error("write arrow::Table failed. [error={}]", s.ToString());
         }
+        table.reset();
       }
+      records_.clear();
     }
 
     LocalArrowSinkFileSystem::Close();
