@@ -64,9 +64,11 @@ TEST(Sink, CsvPmV2) {
   CsvSink::Options options{.name = "table",
                            .name_options{.suffix = "csv"},
                            .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
-                           .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); }};
+                           .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); },
+                           .ofs_options{.headers = {"a", "b2"}}};
   CsvSink s(std::move(options));
-  auto record = CsvRow{"a2_1", "a2_2", "b2_1", "b2_2"};
+  auto record = CsvRow{"a2_1", "a2_2"};
+  // auto record_b = CsvRow{"b2_1", "b2_2"};
 
   constexpr int kThreadCount = 8;
   constexpr int kWritesPerThread = 10000 * 5 + 10;

@@ -58,6 +58,22 @@ std::shared_ptr<arrow::RecordBatch> GenRecordBatchV2() {
   return arrow::RecordBatch::Make(schema, 2, arrays);
 }
 
+std::shared_ptr<arrow::RecordBatch> GenRecordBatchV3() {
+  arrow::StringBuilder sb_a;
+  arrow::StringBuilder sb_b;
+
+  auto s = sb_a.Append("a2_1");
+  s = sb_b.Append("b2_1");
+
+  std::vector<std::shared_ptr<arrow::Array>> arrays;
+  arrays.resize(2);
+  s = sb_a.Finish(&arrays[0]);
+  s = sb_b.Finish(&arrays[1]);
+
+  auto schema = arrow::schema({arrow::field("a", arrow::utf8()), arrow::field("b2", arrow::utf8())});
+  return arrow::RecordBatch::Make(schema, 2, arrays);
+}
+
 std::shared_ptr<arrow::Table> GenTable() {
   auto r = arrow::Table::FromRecordBatches({GenRecordBatch()});
   return r.ValueOrDie();
@@ -209,7 +225,7 @@ TEST(Sink, CsvPm) {
       .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
       .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); }};
   ArrowCsvLocalSink s(std::move(options));
-  auto record = GenRecordBatchV2();
+  auto record = GenRecordBatchV3();
 
   constexpr int kThreadCount = 8;
   constexpr int kWritesPerThread = 10000 * 5 + 10;

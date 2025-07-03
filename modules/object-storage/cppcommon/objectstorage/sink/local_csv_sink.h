@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <fstream>
 #include <memory>
 #include <string>
@@ -17,16 +19,29 @@
 
 namespace cppcommon::os {
 
+struct CsvWriterOptions {
+  std::vector<std::string> headers;
+};
+
 using CsvRow = std::vector<std::string>;
 class CsvWriter : public SinkFileSystem<CsvRow> {
  public:
+  explicit CsvWriter(const CsvWriterOptions &options) : options_(&options) {}
   void Open(const std::string &filepath) override {
     filepath_ = filepath;
     ofs_.open(filepath, std::ios::out | std::ios::app);
     writer_ = csv::make_csv_writer_ptr(ofs_);
+    header_size_ = options_->headers.size();
+    if (header_size_) {
+      *writer_ << options_->headers;
+    }
   }
 
   inline int Write(CsvRow &&record) override {
+    if (header_size_ && header_size_ != record.size()) {
+      spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
+      return 0;
+    }
     *writer_ << record;
     return 1;
   }
@@ -45,7 +60,9 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   std::string filepath_;
   std::ofstream ofs_;
   std::shared_ptr<csv::CSVWriter<std::ofstream>> writer_;
+  const CsvWriterOptions *options_{nullptr};
+  size_t header_size_{0};
 };
 
-using CsvSink = BaseSink<CsvRow, CsvWriter>;
+using CsvSink = BaseSink<CsvRow, CsvWriter, CsvWriterOptions>;
 }  // namespace cppcommon::os
