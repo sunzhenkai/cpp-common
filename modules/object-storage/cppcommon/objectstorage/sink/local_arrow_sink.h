@@ -113,7 +113,6 @@ class LocalArrowRecordBatchFS : public LocalArrowSinkFileSystem<std::shared_ptr<
                                                  arrow_props)
                     .ValueOrDie();
     }
-    std::cout << "CKPT B " << record.use_count() << std::endl;
     auto s = writer_->WriteRecordBatch(*record);
     if (s.ok()) {
       return record->num_rows();
