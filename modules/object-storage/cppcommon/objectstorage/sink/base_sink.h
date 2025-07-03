@@ -24,7 +24,6 @@
 #include <thread>
 #include <utility>
 
-// #include "boost/lockfree/queue.hpp"
 #include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
 
@@ -196,7 +195,6 @@ class BaseSink {
   std::mutex cv_mutex_;
   std::queue<Record> queue_;
   std::mutex queue_mutex_;
-  // boost::lockfree::queue<Record> queue_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
