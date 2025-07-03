@@ -71,8 +71,6 @@ class ArrowLocalSinkBase : public SinkFileSystem<Record> {
     }
   }
 
-  static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
-
  protected:
   std::shared_ptr<arrow::io::FileOutputStream> ofs_;
   std::shared_ptr<Writer> writer_;

@@ -41,8 +41,7 @@ class SinkFileSystem {
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
-
-  static bool IsExists(const std::string &filepath);
+  inline static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
   virtual ~SinkFileSystem() {
     Flush();
     Close();
