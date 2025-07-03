@@ -241,7 +241,6 @@ template <typename Record, typename FS>
 void BaseSink<Record, FS>::WriteThreadFunc() {
   while (true) {
     if (queue_.empty() && state_.stopped_) break;
-
     {
       // try wait only if queue is empty
       if (queue_.empty()) {
@@ -267,7 +266,8 @@ void BaseSink<Record, FS>::WriteThreadFunc() {
 template <typename Record, typename FS>
 void BaseSink<Record, FS>::OpenNewFile(const std::string &filepath) {
   if (ofs_) {
-    ofs_->Close();
+    auto ofs = std::move(ofs_);
+    std::thread([ofs = std::move(ofs)]() mutable { ofs->Close(); }).detach();
     ofs_.reset();
   }
   ofs_ = std::make_shared<FS>();
