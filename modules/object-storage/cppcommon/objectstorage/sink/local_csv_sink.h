@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "cppcommon/extends/csv/csv.hpp"
+#include "cppcommon/extends/csv/csv.h"
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
 namespace cppcommon::os {
