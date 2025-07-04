@@ -6920,11 +6920,13 @@ namespace csv {
         return CSVWriter<OutputStream>(out, quote_minimal);
     }
 
-    template<class OutputStream>
-    inline std::shared_ptr<CSVWriter<OutputStream>> make_csv_writer_ptr(OutputStream& out, bool quote_minimal=true) {
-        return std::make_shared<CSVWriter<OutputStream>>(out, quote_minimal);
-    }
+    template <class OutputStream, char Delim, bool Flush = true>
+    using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', Flush>;
 
+    template<char Delim, class OutputStream>
+    inline std::shared_ptr<CstCSVWriter<OutputStream, Delim>> make_csv_writer_ptr(OutputStream& out, bool quote_minimal=true) {
+        return std::make_shared<CstCSVWriter<OutputStream, Delim>>(out, quote_minimal);
+    }
 
     /** Return a buffered csv::CSVWriter over the output stream (does not auto flush) */
     template<class OutputStream>
