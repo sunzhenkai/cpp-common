@@ -23,14 +23,18 @@ struct CsvWriterOptions {
   std::vector<std::string> headers;
 };
 
+template <class OutputStream, char Delim, bool Flush = true>
+using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', Flush>;
+
 using CsvRow = std::vector<std::string>;
+template <char Delim>
 class CsvWriter : public SinkFileSystem<CsvRow> {
  public:
   explicit CsvWriter(const CsvWriterOptions &options) : options_(&options) {}
   void Open(const std::string &filepath) override {
     filepath_ = filepath;
     ofs_.open(filepath, std::ios::out | std::ios::app);
-    writer_ = csv::make_csv_writer_ptr(ofs_);
+    writer_ = csv::make_csv_writer_ptr<Delim>(ofs_);
     header_size_ = options_->headers.size();
     if (header_size_) {
       *writer_ << options_->headers;
@@ -59,10 +63,13 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
  protected:
   std::string filepath_;
   std::ofstream ofs_;
-  std::shared_ptr<csv::CSVWriter<std::ofstream>> writer_;
+  std::shared_ptr<CstCSVWriter<std::ofstream, Delim>> writer_;
   const CsvWriterOptions *options_{nullptr};
   size_t header_size_{0};
 };
 
-using CsvSink = BaseSink<CsvRow, CsvWriter, CsvWriterOptions>;
+template <char Delim>
+using CsvSinkT = BaseSink<CsvRow, CsvWriter<Delim>, CsvWriterOptions>;
+
+using CsvSink = CsvSinkT<','>;
 }  // namespace cppcommon::os
