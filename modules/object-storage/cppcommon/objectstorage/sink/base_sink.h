@@ -54,7 +54,7 @@ enum class RollPeriod {
   DAILY = 1000 * 60 * 60 * 24,
 };
 
-// NORMAL: 2025/06/06/02; PARTED: part=2026-06-06/02
+// NOTE: NORMAL: 2025/06/06/02; PARTED: part=2026-06-06/hour=02
 enum class TimeRollPathFormat { UNSPECIFIED, NORMAL, PARTED };
 
 inline std::string GenDatePath(int64_t ts_ms, TimeRollPathFormat path_fmt) {
