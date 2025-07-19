@@ -12,6 +12,10 @@
 #include <string>
 #include <vector>
 
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 namespace cppcommmon {
 std::string GetKernelVersionFromFile(const std::string& filepath) {
   std::string kernel_version;
@@ -143,7 +147,6 @@ void ParseCpuUtil(MachineInfo::CpuDynamicInfo& info) {
         if (total_cpu_time > 0) {
           double idle_time_percent = (static_cast<double>(idle) / total_cpu_time) * 100.0;
           info.cpu_util_percent_avg = 100.0 - idle_time_percent;
-          info.cpu_util_percent.push_back(info.cpu_util_percent_avg);  // Store overall average
         }
       }
     }
@@ -247,16 +250,12 @@ std::string MachineInfo::ToString() const {
   oss << "  Load Average (1min): " << std::fixed << std::setprecision(2) << dynamic_info.cpu.load_avg_1min << "\n";
   oss << "  Load Average (5min): " << std::fixed << std::setprecision(2) << dynamic_info.cpu.load_avg_5min << "\n";
   oss << "  Load Average (15min): " << std::fixed << std::setprecision(2) << dynamic_info.cpu.load_avg_15min << "\n";
-  oss << "  CPU Utilization Avg: " << std::fixed << std::setprecision(2) << dynamic_info.cpu.cpu_util_percent_avg
-      << "%\n";
+  oss << "  CPU Utilization Avg (Overall): " << std::fixed << std::setprecision(2)
+      << dynamic_info.cpu.cpu_util_percent_avg << "%\n";
   oss << "  CPU Utilization (Individual Cores):\n";
   for (size_t i = 0; i < dynamic_info.cpu.cpu_util_percent.size(); ++i) {
-    if (i == 0) {
-      oss << "    Overall CPU: " << std::fixed << std::setprecision(2) << dynamic_info.cpu.cpu_util_percent[i] << "%\n";
-    } else {
-      oss << "    CPU" << (i - 1) << ": " << std::fixed << std::setprecision(2) << dynamic_info.cpu.cpu_util_percent[i]
-          << "%\n";
-    }
+    oss << "    CPU" << (i - 1) << ": " << std::fixed << std::setprecision(2) << dynamic_info.cpu.cpu_util_percent[i]
+        << "%\n";
   }
   oss << "  Memory Total (KB): " << dynamic_info.memory.mem_total_kb << "\n";
   oss << "  Memory Available (KB): " << dynamic_info.memory.mem_available_kb << "\n";
@@ -265,87 +264,66 @@ std::string MachineInfo::ToString() const {
 }
 
 std::string MachineInfo::ToJson() const {
-  std::ostringstream oss;
-  oss << "{";
+  rapidjson::Document document;
+  document.SetObject();  // 根是一个 JSON 对象
 
-  auto quote_and_escape = [](const std::string& s) {
-    std::string escaped_s = "\"";
-    for (char c : s) {
-      switch (c) {
-        case '"':
-          escaped_s += "\\\"";
-          break;
-        case '\\':
-          escaped_s += "\\\\";
-          break;
-        case '\b':
-          escaped_s += "\\b";
-          break;
-        case '\f':
-          escaped_s += "\\f";
-          break;
-        case '\n':
-          escaped_s += "\\n";
-          break;
-        case '\r':
-          escaped_s += "\\r";
-          break;
-        case '\t':
-          escaped_s += "\\t";
-          break;
-        default:
-          escaped_s += c;
-          break;
-      }
-    }
-    escaped_s += "\"";
-    return escaped_s;
-  };
+  rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
   // Static Info
-  oss << "\"static_info\":{";
-  oss << "\"cpu\":{";
-  oss << "\"cpu_logical_cores\":" << static_info.cpu.cpu_logical_cores << ",";
-  oss << "\"cpu_physical_cores\":" << static_info.cpu.cpu_physical_cores << ",";
-  oss << "\"cpu_model\":" << quote_and_escape(static_info.cpu.cpu_model);
-  oss << "},";  // End cpu
-  oss << "\"memory\":{";
-  oss << "\"total_memory_kb\":" << static_info.memory.total_memory_kb;
-  oss << "},";  // End memory
-  oss << "\"os\":{";
-  oss << "\"os_name\":" << quote_and_escape(static_info.os.os_name) << ",";
-  oss << "\"os_version\":" << quote_and_escape(static_info.os.os_version) << ",";
-  oss << "\"kernel_version\":" << quote_and_escape(static_info.os.kernel_version);
-  oss << "}";   // End os
-  oss << "},";  // End static_info
+  rapidjson::Value static_info_obj(rapidjson::kObjectType);
+
+  rapidjson::Value cpu_static_obj(rapidjson::kObjectType);
+  cpu_static_obj.AddMember("cpu_logical_cores", static_info.cpu.cpu_logical_cores, allocator);
+  cpu_static_obj.AddMember("cpu_physical_cores", static_info.cpu.cpu_physical_cores, allocator);
+  cpu_static_obj.AddMember("cpu_model", rapidjson::Value(static_info.cpu.cpu_model.c_str(), allocator).Move(),
+                           allocator);
+  static_info_obj.AddMember("cpu", cpu_static_obj, allocator);
+
+  rapidjson::Value memory_static_obj(rapidjson::kObjectType);
+  memory_static_obj.AddMember("total_memory_kb", static_info.memory.total_memory_kb, allocator);
+  static_info_obj.AddMember("memory", memory_static_obj, allocator);
+
+  rapidjson::Value os_info_obj(rapidjson::kObjectType);
+  os_info_obj.AddMember("os_name", rapidjson::Value(static_info.os.os_name.c_str(), allocator).Move(), allocator);
+  os_info_obj.AddMember("os_version", rapidjson::Value(static_info.os.os_version.c_str(), allocator).Move(), allocator);
+  os_info_obj.AddMember("kernel_version", rapidjson::Value(static_info.os.kernel_version.c_str(), allocator).Move(),
+                        allocator);
+  static_info_obj.AddMember("os", os_info_obj, allocator);
+
+  document.AddMember("static_info", static_info_obj, allocator);
 
   // Dynamic Info
-  oss << "\"dynamic_info\":{";
-  oss << "\"cpu\":{";
-  oss << "\"load_avg_1min\":" << std::fixed << std::setprecision(2) << dynamic_info.cpu.load_avg_1min << ",";
-  oss << "\"load_avg_5min\":" << std::fixed << std::setprecision(2) << dynamic_info.cpu.load_avg_5min << ",";
-  oss << "\"load_avg_15min\":" << std::fixed << std::setprecision(2) << dynamic_info.cpu.load_avg_15min << ",";
-  oss << "\"cpu_util_percent_avg\":" << std::fixed << std::setprecision(2) << dynamic_info.cpu.cpu_util_percent_avg
-      << ",";
-  oss << "\"cpu_util_percent\":[";
-  for (size_t i = 0; i < dynamic_info.cpu.cpu_util_percent.size(); ++i) {
-    oss << std::fixed << std::setprecision(2) << dynamic_info.cpu.cpu_util_percent[i];
-    if (i < dynamic_info.cpu.cpu_util_percent.size() - 1) {
-      oss << ",";
-    }
-  }
-  oss << "]";
-  oss << "},";  // End cpu
-  oss << "\"memory\":{";
-  oss << "\"mem_total_kb\":" << dynamic_info.memory.mem_total_kb << ",";
-  oss << "\"mem_available_kb\":" << dynamic_info.memory.mem_available_kb << ",";
-  oss << "\"mem_used_kb\":" << dynamic_info.memory.mem_used_kb;
-  oss << "},";  // End memory
+  rapidjson::Value dynamic_info_obj(rapidjson::kObjectType);
 
-  oss << "\"timestamp_ms\":"
-      << std::chrono::duration_cast<std::chrono::milliseconds>(dynamic_info.timestamp.time_since_epoch()).count();
-  oss << "}";  // End dynamic_info
-  oss << "}";  // End MachineInfo
-  return oss.str();
+  rapidjson::Value cpu_dynamic_obj(rapidjson::kObjectType);
+  cpu_dynamic_obj.AddMember("load_avg_1min", dynamic_info.cpu.load_avg_1min, allocator);
+  cpu_dynamic_obj.AddMember("load_avg_5min", dynamic_info.cpu.load_avg_5min, allocator);
+  cpu_dynamic_obj.AddMember("load_avg_15min", dynamic_info.cpu.load_avg_15min, allocator);
+  cpu_dynamic_obj.AddMember("cpu_util_percent_avg", dynamic_info.cpu.cpu_util_percent_avg, allocator);
+
+  rapidjson::Value cpu_util_array(rapidjson::kArrayType);
+  for (double util : dynamic_info.cpu.cpu_util_percent) {
+    cpu_util_array.PushBack(util, allocator);
+  }
+  cpu_dynamic_obj.AddMember("cpu_util_percent", cpu_util_array, allocator);
+  dynamic_info_obj.AddMember("cpu", cpu_dynamic_obj, allocator);
+
+  rapidjson::Value memory_dynamic_obj(rapidjson::kObjectType);
+  memory_dynamic_obj.AddMember("mem_total_kb", dynamic_info.memory.mem_total_kb, allocator);
+  memory_dynamic_obj.AddMember("mem_available_kb", dynamic_info.memory.mem_available_kb, allocator);
+  memory_dynamic_obj.AddMember("mem_used_kb", dynamic_info.memory.mem_used_kb, allocator);
+  dynamic_info_obj.AddMember("memory", memory_dynamic_obj, allocator);
+
+  int64_t timestamp_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(dynamic_info.timestamp.time_since_epoch()).count();
+  dynamic_info_obj.AddMember("timestamp_ms", timestamp_ms, allocator);
+
+  document.AddMember("dynamic_info", dynamic_info_obj, allocator);
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+
+  return buffer.GetString();
 }
 }  // namespace cppcommmon

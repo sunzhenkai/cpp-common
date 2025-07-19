@@ -6,4 +6,5 @@
 TEST(OsMI, Static) {
   cppcommmon::MachineInfo mi;
   std::cout << mi.ToString() << std::endl;
+  std::cout << mi.ToJson() << std::endl;
 }
