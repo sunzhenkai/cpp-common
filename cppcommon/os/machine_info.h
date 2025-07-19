@@ -55,6 +55,8 @@ struct MachineInfo {
 
   void InitStaticInfo();
   void UpdateDynamicInfo();
+  std::string ToString() const;
+  std::string ToJson() const;
 };
 
 std::string GetKernelVersionFromFile(const std::string& filepath);
