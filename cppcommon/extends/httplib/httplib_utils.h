@@ -22,12 +22,12 @@ inline std::optional<std::string> HttpGet(const std::string& host, const std::st
     if (res->status == 200) {
       return res->body;
     } else {
-      std::cerr << "HTTP GET failed for " << host << path << " with status: " << res->status << std::endl;
+      // std::cerr << "HTTP GET failed for " << host << path << " with status: " << res->status << std::endl;
       return std::nullopt;
     }
   } else {
     auto err = res.error();
-    std::cerr << "HTTP GET request failed for " << host << path << ": " << httplib::to_string(err) << std::endl;
+    // std::cerr << "HTTP GET request failed for " << host << path << ": " << httplib::to_string(err) << std::endl;
     return std::nullopt;
   }
 }

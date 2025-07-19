@@ -24,8 +24,8 @@ class AWSInfoProvider : public CloudInfoProvider {
     try {
       std::optional<std::string> instance_id_resp = HttpGet(IMDS_HOST, IMDS_BASE_PATH + "instance-id");
       if (!instance_id_resp) {
-        LOG_ERR("[{}] {}", CloudProviderToString(info.cloud_provider),
-                "Could not get instance-id. Not an AWS EC2 instance or network issue.");
+        // LOG_WARN("[{}] {}", CloudProviderToString(info.cloud_provider),
+        //          "Could not get instance-id. Not an AWS EC2 instance or network issue.");
         return std::nullopt;
       }
       info.instance_id = *instance_id_resp;

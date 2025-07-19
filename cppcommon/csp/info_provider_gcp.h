@@ -28,8 +28,8 @@ class GCPInfoProvider : public CloudInfoProvider {
       std::optional<std::string> instance_id_resp =
           HttpGet(METADATA_HOST, METADATA_BASE_PATH + "instance/id?alt=text", METADATA_HEADERS);
       if (!instance_id_resp) {
-        LOG_ERR("[{}] {}", CloudProviderToString(info.cloud_provider),
-                "Could not get instance ID. Not a GCP Compute Engine instance or network issue.");
+        // LOG_WARN("[{}] {}", CloudProviderToString(info.cloud_provider),
+        //         "Could not get instance ID. Not a GCP Compute Engine instance or network issue.");
         return std::nullopt;
       }
       info.instance_id = *instance_id_resp;

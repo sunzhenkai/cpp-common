@@ -110,7 +110,7 @@ std::enable_if_t<!is_string_like_v<T>, T> GetFromMap(const M &m, const std::stri
     } catch (...) {
     }
   } else {
-    static_assert(std::false_type::value, "Unsupported type in GetFromMap");
+    static_assert(dependent_false<T>::value, "Unsupported type in GetFromMap");
   }
   return dft;
 }

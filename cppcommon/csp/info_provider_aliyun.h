@@ -24,8 +24,8 @@ class AliyunInfoProvider : public CloudInfoProvider {
     try {
       std::optional<std::string> instance_id_resp = HttpGet(IMS_HOST, IMS_BASE_PATH + "instance-id");
       if (!instance_id_resp) {
-        LOG_ERR("[{}] Could not get instance-id. Not an Aliyun ECS instance or network issue.",
-                CloudProviderToString(info.cloud_provider));
+        // LOG_WARN("[{}] Could not get instance-id. Not an Aliyun ECS instance or network issue.",
+        //         CloudProviderToString(info.cloud_provider));
         return std::nullopt;
       }
       info.instance_id = *instance_id_resp;
