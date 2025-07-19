@@ -93,4 +93,21 @@ DECLARE_LOGGER(Record, record, 1024, 5, SPDLOG_LEVEL, GENERAL_LOG_FORMAT);
 #ifndef CCRITICAL
 #define CCRITICAL(format, args...) cppcommon::extends::kConsoleLogger->critical(format, ##args);
 #endif  // !CCRITICAL
+
+// Normal Logger
+#ifndef LOG_ERR
+#define LOG_ERR(format, args...) spdlog::error(format, ##args)
+#endif
+#ifndef LOG_INFO
+#define LOG_INFO(format, args...) spdlog::info(format, ##args)
+#endif
+#ifndef LOG_WARN
+#define LOG_WARN(format, args...) spdlog::warn(format, ##args)
+#endif
+#ifndef LOG_DBG
+#define LOG_DBG(format, args...) spdlog::debug(format, ##args)
+#endif
+#ifndef LOG_CRITICAL
+#define LOG_CRITICAL(format, args...) spdlog::critical(format, ##args)
+#endif
 }  // namespace cppcommon::extends

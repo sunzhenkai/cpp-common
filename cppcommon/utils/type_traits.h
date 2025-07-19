@@ -138,4 +138,7 @@ struct is_string_literal : is_string_literal_impl<unwrap_type_t<T>> {};
 
 template <typename T>
 constexpr bool is_string_literal_v = is_string_literal_impl<unwrap_type_t<T>>::value;
+
+template <typename>
+struct dependent_false : std::false_type {};
 }  // namespace cppcommon
