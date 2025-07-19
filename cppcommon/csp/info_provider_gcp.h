@@ -11,6 +11,8 @@
 #include "cppcommon/csp/info_provider_interface.h"
 #include "cppcommon/extends/httplib/httplib_utils.h"
 #include "cppcommon/extends/spdlog/log.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 namespace cppcommon {
 class GCPInfoProvider : public CloudInfoProvider {
@@ -58,17 +60,32 @@ class GCPInfoProvider : public CloudInfoProvider {
       std::optional<std::string> network_interfaces_json = HttpGet(
           METADATA_HOST, METADATA_BASE_PATH + "instance/network-interfaces/?recursive=true&alt=json", METADATA_HEADERS);
       if (network_interfaces_json) {
-        try {
-          auto j = nlohmann::json::parse(*network_interfaces_json);
-          if (j.is_array() && !j.empty()) {
-            info.private_ip = j[0]["ip"].get<std::string>();
-            if (j[0].contains("accessConfigs") && j[0]["accessConfigs"].is_array() && !j[0]["accessConfigs"].empty()) {
-              info.public_ip = j[0]["accessConfigs"][0]["externalIp"].get<std::string>();
+        rapidjson::Document doc;
+        doc.Parse(network_interfaces_json->c_str());
+
+        if (doc.HasParseError()) {
+          LOG_ERR("[{}] {}", CloudProviderToString(info.cloud_provider),
+                  std::string("RapidJSON parse error for network interfaces: ") +
+                      rapidjson::GetParseError_En(doc.GetParseError()));
+        } else if (doc.IsArray() && doc.Size() > 0) {
+          const rapidjson::Value& first_interface = doc[0];
+          if (first_interface.IsObject()) {
+            if (first_interface.HasMember("ip") && first_interface["ip"].IsString()) {
+              info.private_ip = first_interface["ip"].GetString();
+            }
+
+            if (first_interface.HasMember("accessConfigs") && first_interface["accessConfigs"].IsArray() &&
+                first_interface["accessConfigs"].Size() > 0) {
+              const rapidjson::Value& first_access_config = first_interface["accessConfigs"][0];
+              if (first_access_config.IsObject() && first_access_config.HasMember("externalIp") &&
+                  first_access_config["externalIp"].IsString()) {
+                info.public_ip = first_access_config["externalIp"].GetString();
+              }
             }
           }
-        } catch (const nlohmann::json::exception& json_e) {
+        } else {
           LOG_ERR("[{}] {}", CloudProviderToString(info.cloud_provider),
-                  std::string("JSON parse error for network interfaces: ") + json_e.what());
+                  "Network interfaces JSON is not a valid array or is empty.");
         }
       } else {
         LOG_ERR("[{}] {}", CloudProviderToString(info.cloud_provider), "Failed to get network interfaces JSON.");
