@@ -24,6 +24,7 @@
   },
   "dependencies": [
     "abseil",
+    "cpp-httplib",
     "gtest",
     "spdlog",
     "rapidjson",

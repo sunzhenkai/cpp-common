@@ -9,7 +9,7 @@
 #include <optional>
 #include <string>
 
-#include "cppcommon/3rd/httplib/httplib.h"
+#include "httplib.h"
 
 namespace cppcommon {
 inline std::optional<std::string> HttpGet(const std::string& host, const std::string& path,
