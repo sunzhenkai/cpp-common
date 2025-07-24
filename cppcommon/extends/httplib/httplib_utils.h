@@ -26,7 +26,7 @@ inline std::optional<std::string> HttpGet(const std::string& host, const std::st
       return std::nullopt;
     }
   } else {
-    auto err = res.error();
+    // auto err = res.error();
     // std::cerr << "HTTP GET request failed for " << host << path << ": " << httplib::to_string(err) << std::endl;
     return std::nullopt;
   }
