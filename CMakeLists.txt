@@ -15,8 +15,10 @@ endif()
 find_package(spdlog CONFIG REQUIRED)
 find_package(RapidJSON CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
+find_package(httplib CONFIG REQUIRED)
 
-set(THIRD_LIBRARIES spdlog::spdlog rapidjson absl::status absl::statusor)
+set(THIRD_LIBRARIES spdlog::spdlog rapidjson absl::status absl::statusor
+                    httplib::httplib)
 
 include_directories(.)
 file(GLOB_RECURSE LIB_HREADERS cppcommon/*.h)
