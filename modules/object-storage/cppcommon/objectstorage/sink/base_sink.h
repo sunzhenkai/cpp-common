@@ -9,7 +9,6 @@
 #include <fmt/format.h>
 #include <unistd.h>
 
-#include <condition_variable>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -155,10 +154,8 @@ class BaseSink {
     auto _writer_thread_count = FS::IsThreadSafe() ? options_.writer_thread_count : 1;
     writer_threads_.reserve(_writer_thread_count);
     spdlog::info("base sink {} with writer threads: {}", typeid(FS).name(), _writer_thread_count);
-    if (FS::IsThreadSafe()) {
-      for (auto i = 0; i < _writer_thread_count; ++i) {
-        writer_threads_.emplace_back(&BaseSink::WriteThreadFunc, this);
-      }
+    for (auto i = 0; i < _writer_thread_count; ++i) {
+      writer_threads_.emplace_back(&BaseSink::WriteThreadFunc, this);
     }
   }
 
