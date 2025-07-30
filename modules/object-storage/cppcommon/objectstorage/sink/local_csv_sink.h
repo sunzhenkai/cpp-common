@@ -26,7 +26,7 @@ struct CsvWriterOptions {
 template <class OutputStream, char Delim>
 using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', false>;
 
-static const int64_t kCsvWriterBufferSize = 4 * 1024 * 1024;
+static const int64_t kCsvWriterBufferSize = 64 * 1024 * 1024;
 
 using CsvRow = std::vector<std::string>;
 template <char Delim>

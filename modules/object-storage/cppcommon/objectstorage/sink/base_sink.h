@@ -234,17 +234,27 @@ void BaseSink<Record, FS, OfsOptions>::Close() {
 
 template <typename Record, typename FS, typename OfsOptions>
 void BaseSink<Record, FS, OfsOptions>::WriteThreadFunc() {
+  Record items[100];
   while (!state_.stopped_ || queue_.size_approx() != 0) {
-    Record item;
-    if (queue_.wait_dequeue_timed(item, std::chrono::milliseconds(5))) {
+    auto count = queue_.wait_dequeue_bulk(items, 100);
+    for (size_t i = 0; i < count; ++i) {
       if (IsRoll()) {
         RollFile();
       }
       if (ofs_) {
         // NOTE: only one write thread (consumer thread)
-        state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
+        state_.current_row_nums += ofs_->Write(std::forward<Record>(items[i]));
       }
     }
+    // if (queue_.wait_dequeue_timed(item, std::chrono::milliseconds(5))) {
+    //   if (IsRoll()) {
+    //     RollFile();
+    //   }
+    //   if (ofs_) {
+    //     // NOTE: only one write thread (consumer thread)
+    //     state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
+    //   }
+    // }
   }
 }
 
