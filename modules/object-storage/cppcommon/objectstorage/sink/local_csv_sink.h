@@ -55,7 +55,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       return 0;
     }
     ++in_flight_;
-    in_flight_.fetch_add(1, std::memory_order_relaxed);
     std::ostringstream oss;
     writer_->WriteTo(oss, record);
     {
