@@ -10,8 +10,8 @@
 
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "cppcommon/extends/csv/csv.h"
@@ -52,7 +52,13 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
     }
-    *writer_ << std::move(record);
+    // *writer_ << std::move(record);
+    std::ostringstream oss;
+    writer_->WriteTo(oss, record);
+    {
+      std::lock_guard lock(ofs_mtx_);
+      ofs_.write(oss.str().data(), oss.str().size());
+    }
     return 1;
   }
 
@@ -69,9 +75,12 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     if (ofs_) ofs_.flush();
   }
 
+  inline bool IsThreadSafe() override { return true; }
+
  protected:
   std::string filepath_;
   std::ofstream ofs_;
+  std::mutex ofs_mtx_;
   std::shared_ptr<CstCSVWriter<std::ofstream, Delim>> writer_;
   const CsvWriterOptions *options_{nullptr};
   size_t header_size_{0};

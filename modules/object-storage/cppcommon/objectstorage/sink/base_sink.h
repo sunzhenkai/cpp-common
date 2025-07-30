@@ -39,6 +39,7 @@ class SinkFileSystem {
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
+  virtual bool IsThreadSafe() { return false; }
   inline static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
   virtual ~SinkFileSystem() {
     Flush();
@@ -135,6 +136,7 @@ class BaseSink {
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
     bool close_in_threads{false};
+    int writer_thread_count{1};
     [[no_unique_address]] std::conditional_t<std::is_void_v<OfsOptions>, int, OfsOptions> ofs_options;
   };
 
@@ -149,8 +151,12 @@ class BaseSink {
     }
   };
 
-  explicit BaseSink(Options &&options)
-      : options_(std::move(options)), writer_thread_(&BaseSink::WriteThreadFunc, this) {}
+  explicit BaseSink(Options &&options) : options_(std::move(options)) {
+    writer_threads_.reserve(options_.writer_thread_count);
+    for (auto i = 0; i < options_.writer_thread_count; ++i) {
+      writer_threads_.emplace_back(&BaseSink::WriteThreadFunc, this);
+    }
+  }
 
   virtual ~BaseSink() { Close(); }
 
@@ -177,10 +183,10 @@ class BaseSink {
   Options options_;
   State state_{};
 
-  std::condition_variable cv_;
-  std::mutex cv_mutex_;
+  std::mutex roll_mtx_;
+  std::mutex ofs_mtx_;
   moodycamel::BlockingConcurrentQueue<Record> queue_;
-  std::thread writer_thread_;
+  std::vector<std::thread> writer_threads_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
 
@@ -217,12 +223,10 @@ void BaseSink<Record, FS, OfsOptions>::RemoveOverflowFiles() {
 template <typename Record, typename FS, typename OfsOptions>
 void BaseSink<Record, FS, OfsOptions>::Close() {
   // write inflight records
-  {
-    std::lock_guard lock(cv_mutex_);
-    state_.stopped_ = true;
+  state_.stopped_ = true;
+  for (auto &th : writer_threads_) {
+    if (th.joinable()) th.join();
   }
-  cv_.notify_all();
-  if (writer_thread_.joinable()) writer_thread_.join();
   // close current file
   CloseCurrentFile();
   // wait for file closing threads
@@ -234,27 +238,24 @@ void BaseSink<Record, FS, OfsOptions>::Close() {
 
 template <typename Record, typename FS, typename OfsOptions>
 void BaseSink<Record, FS, OfsOptions>::WriteThreadFunc() {
-  Record items[100];
   while (!state_.stopped_ || queue_.size_approx() != 0) {
-    auto count = queue_.wait_dequeue_bulk(items, 100);
-    for (size_t i = 0; i < count; ++i) {
-      if (IsRoll()) {
-        RollFile();
+    Record item;
+    if (queue_.wait_dequeue_timed(item, std::chrono::milliseconds(5))) {
+      {
+        std::lock_guard lock(roll_mtx_);
+        if (IsRoll()) {
+          RollFile();
+        }
       }
       if (ofs_) {
-        // NOTE: only one write thread (consumer thread)
-        state_.current_row_nums += ofs_->Write(std::forward<Record>(items[i]));
+        if (ofs_->IsThreadSafe()) {
+          state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
+        } else {
+          std::lock_guard lock(ofs_mtx_);
+          state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
+        }
       }
     }
-    // if (queue_.wait_dequeue_timed(item, std::chrono::milliseconds(5))) {
-    //   if (IsRoll()) {
-    //     RollFile();
-    //   }
-    //   if (ofs_) {
-    //     // NOTE: only one write thread (consumer thread)
-    //     state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
-    //   }
-    // }
   }
 }
 
