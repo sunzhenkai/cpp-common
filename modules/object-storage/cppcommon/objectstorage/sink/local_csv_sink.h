@@ -23,8 +23,8 @@ struct CsvWriterOptions {
   std::vector<std::string> headers;
 };
 
-template <class OutputStream, char Delim, bool Flush = true>
-using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', Flush>;
+template <class OutputStream, char Delim>
+using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', false>;
 
 using CsvRow = std::vector<std::string>;
 template <char Delim>
@@ -34,7 +34,11 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   void Open(const std::string &filepath) override {
     filepath_ = filepath;
     ofs_.open(filepath, std::ios::out | std::ios::app);
-    writer_ = csv::make_csv_writer_ptr<Delim>(ofs_);
+
+    static thread_local std::vector<char> buf(4 * 1024 * 1024);
+    ofs_.rdbuf()->pubsetbuf(buf.data(), buf.size());
+
+    writer_ = csv::make_csv_writer_ptr<Delim, false>(ofs_);
     header_size_ = options_->headers.size();
     if (header_size_) {
       *writer_ << options_->headers;
