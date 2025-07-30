@@ -42,11 +42,10 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     static thread_local std::vector<char> buf(kCsvWriterBufferSize);
     ofs_.rdbuf()->pubsetbuf(buf.data(), buf.size());
 
-    // do not use csv writer to write things
-    writer_ = csv::make_csv_writer_ptr<Delim, false>(fake_ofs_);
+    writer_ = csv::make_csv_writer_ptr<Delim, false>(ofs_);
     header_size_ = options_->headers.size();
     if (header_size_) {
-      Write(options_->headers);
+      *writer_ << options_->headers;
     }
   }
 
@@ -56,6 +55,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       return 0;
     }
     ++in_flight_;
+    in_flight_.fetch_add(1, std::memory_order_relaxed);
     std::ostringstream oss;
     writer_->WriteTo(oss, record);
     {
@@ -87,7 +87,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
  protected:
   std::string filepath_;
   std::ofstream ofs_;
-  std::ostringstream fake_ofs_;
   std::mutex ofs_mtx_;
   std::shared_ptr<CstCSVWriter<std::ofstream, Delim>> writer_;
   const CsvWriterOptions *options_{nullptr};
