@@ -9,6 +9,7 @@
 #include "cppcommon/objectstorage/sink/base_sink.h"
 #include "cppcommon/objectstorage/sink/local_csv_sink.h"
 #include "cppcommon/utils/time.h"
+#include "cppcommon/utils/time_ruler.h"
 #include "gtest/gtest.h"
 
 using namespace cppcommon;
@@ -136,4 +137,37 @@ TEST(Sink, CsvDelim) {
   for (auto &t : threads) {
     t.join();
   }
+}
+
+TEST(Sink, CsvBm) {
+  cppcommon::TimeRuler tr;
+  using DCsvSink = CsvSinkT<'|'>;
+
+  DCsvSink ::Options options{.name = "table",
+                             .name_options{.suffix = "csv"},
+                             .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
+                             .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); },
+                             .ofs_options{.headers = {"a", "b2"}}};
+  DCsvSink s(std::move(options));
+  auto record = CsvRow{"a2_1", "a2_2"};
+  // auto record_b = CsvRow{"b2_1", "b2_2"};
+
+  constexpr int kThreadCount = 8;
+  constexpr int kWritesPerThread = 10000 * 5 + 10;
+
+  auto writer = [&] {
+    for (int i = 0; i < kWritesPerThread; ++i) {
+      s.Write(record);
+    }
+  };
+
+  std::vector<std::thread> threads;
+  for (int i = 0; i < kThreadCount; ++i) {
+    threads.emplace_back(writer);
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+  std::cout << "Elapsed: " << tr.ElapsedNow() << " ms\n";
 }
