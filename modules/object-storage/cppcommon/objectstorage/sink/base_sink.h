@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "concurrentqueue/blockingconcurrentqueue.h"
 #include "cppcommon/utils/time.h"
 #include "spdlog/spdlog.h"
 
@@ -156,14 +157,15 @@ class BaseSink {
   template <typename T>
   void Write(T &&record) {
     if (state_.stopped_) return;
-    {
-      std::unique_lock lock(queue_mutex_);
-      queue_.emplace(std::forward<T>(record));
-    }
-    cv_.notify_one();
+    // {
+    //   std::unique_lock lock(queue_mutex_);
+    //   queue_.emplace(std::forward<T>(record));
+    // }
+    queue_.enqueue(std::forward<T>(record));
+    // cv_.notify_one();
   }
 
-  inline size_t Size() const { return queue_.size(); }
+  inline size_t Size() const { return queue_.size_approx(); }
 
   void Close();
 
@@ -182,8 +184,9 @@ class BaseSink {
 
   std::condition_variable cv_;
   std::mutex cv_mutex_;
-  std::queue<Record> queue_;
-  std::mutex queue_mutex_;
+  moodycamel::BlockingConcurrentQueue<Record> queue_;
+  // std::queue<Record> queue_;
+  // std::mutex queue_mutex_;
   std::thread writer_thread_;
   std::shared_ptr<FS> ofs_;
   std::queue<std::string> rotated_files_{};
@@ -238,26 +241,37 @@ void BaseSink<Record, FS, OfsOptions>::Close() {
 
 template <typename Record, typename FS, typename OfsOptions>
 void BaseSink<Record, FS, OfsOptions>::WriteThreadFunc() {
-  while (!state_.stopped_ || !queue_.empty()) {
-    {
-      // try wait only if queue is empty
-      if (queue_.empty()) {
-        std::unique_lock lock(cv_mutex_);
-        cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
-      } else {
-        if (IsRoll()) {
-          RollFile();
-        }
-        if (ofs_) {
-          // NOTE: only one write thread (consumer thread)
-          state_.current_row_nums += ofs_->Write(std::forward<Record>(queue_.front()));
-        }
-        {
-          std::unique_lock lock(queue_mutex_);
-          queue_.pop();
-        }
+  while (!state_.stopped_ || queue_.size_approx() != 0) {
+    Record item;
+    if (queue_.wait_dequeue_timed(item, std::chrono::milliseconds(5))) {
+      if (IsRoll()) {
+        RollFile();
+      }
+      if (ofs_) {
+        // NOTE: only one write thread (consumer thread)
+        state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
       }
     }
+
+    // {
+    //   // try wait only if queue is empty
+    //   if (queue_.empty()) {
+    //     std::unique_lock lock(cv_mutex_);
+    //     cv_.wait(lock, [&] { return state_.stopped_ || !queue_.empty(); });
+    //   } else {
+    //     if (IsRoll()) {
+    //       RollFile();
+    //     }
+    //     if (ofs_) {
+    //       // NOTE: only one write thread (consumer thread)
+    //       state_.current_row_nums += ofs_->Write(std::forward<Record>(queue_.front()));
+    //     }
+    //     {
+    //       // std::unique_lock lock(queue_mutex_);
+    //       // queue_.pop();
+    //     }
+    //   }
+    // }
   }
 }
 
