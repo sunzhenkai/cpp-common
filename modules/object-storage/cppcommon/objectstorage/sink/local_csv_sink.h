@@ -11,6 +11,7 @@
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -26,7 +27,7 @@ struct CsvWriterOptions {
 template <class OutputStream, char Delim>
 using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', false>;
 
-static const int64_t kCsvWriterBufferSize = 64 * 1024 * 1024;
+static const int64_t kCsvWriterBufferSize = 4 * 1024 * 1024;  // 4MB
 
 using CsvRow = std::vector<std::string>;
 template <char Delim>
@@ -37,13 +38,14 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     filepath_ = filepath;
     ofs_.open(filepath, std::ios::out | std::ios::binary);  // | std::ios::app
 
-    static thread_local std::vector<char> buf(kCsvWriterBufferSize);  // 4MB
+    static thread_local std::vector<char> buf(kCsvWriterBufferSize);
     ofs_.rdbuf()->pubsetbuf(buf.data(), buf.size());
 
-    writer_ = csv::make_csv_writer_ptr<Delim, false>(ofs_);
+    // do not use csv writer to write things
+    writer_ = csv::make_csv_writer_ptr<Delim, false>(fake_ofs_);
     header_size_ = options_->headers.size();
     if (header_size_) {
-      *writer_ << options_->headers;
+      Write(options_->headers);
     }
   }
 
@@ -52,7 +54,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
     }
-    // *writer_ << std::move(record);
     std::ostringstream oss;
     writer_->WriteTo(oss, record);
     {
@@ -75,11 +76,12 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     if (ofs_) ofs_.flush();
   }
 
-  inline bool IsThreadSafe() override { return true; }
+  static inline bool IsThreadSafe() { return true; }
 
  protected:
   std::string filepath_;
   std::ofstream ofs_;
+  std::ostringstream fake_ofs_;
   std::mutex ofs_mtx_;
   std::shared_ptr<CstCSVWriter<std::ofstream, Delim>> writer_;
   const CsvWriterOptions *options_{nullptr};

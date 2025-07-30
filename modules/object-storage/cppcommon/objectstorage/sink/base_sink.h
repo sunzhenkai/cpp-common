@@ -39,7 +39,7 @@ class SinkFileSystem {
   virtual bool IsOpen() = 0;
   virtual void Close() {}
   virtual void Flush() {}
-  virtual bool IsThreadSafe() { return false; }
+  static bool IsThreadSafe() { return false; }
   inline static bool IsExists(const std::string &filepath) { return std::filesystem::exists(filepath); }
   virtual ~SinkFileSystem() {
     Flush();
@@ -152,9 +152,13 @@ class BaseSink {
   };
 
   explicit BaseSink(Options &&options) : options_(std::move(options)) {
-    writer_threads_.reserve(options_.writer_thread_count);
-    for (auto i = 0; i < options_.writer_thread_count; ++i) {
-      writer_threads_.emplace_back(&BaseSink::WriteThreadFunc, this);
+    auto _writer_thread_count = FS::IsThreadSafe() ? options_.writer_thread_count : 1;
+    writer_threads_.reserve(_writer_thread_count);
+    spdlog::info("base sink {} with writer threads: {}", typeid(FS).name(), _writer_thread_count);
+    if (FS::IsThreadSafe()) {
+      for (auto i = 0; i < _writer_thread_count; ++i) {
+        writer_threads_.emplace_back(&BaseSink::WriteThreadFunc, this);
+      }
     }
   }
 
@@ -248,7 +252,7 @@ void BaseSink<Record, FS, OfsOptions>::WriteThreadFunc() {
         }
       }
       if (ofs_) {
-        if (ofs_->IsThreadSafe()) {
+        if (FS::IsThreadSafe()) {
           state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
         } else {
           std::lock_guard lock(ofs_mtx_);
