@@ -26,6 +26,8 @@ struct CsvWriterOptions {
 template <class OutputStream, char Delim>
 using CstCSVWriter = csv::DelimWriter<OutputStream, Delim, '"', false>;
 
+static const int64_t kCsvWriterBufferSize = 4 * 1024 * 1024;
+
 using CsvRow = std::vector<std::string>;
 template <char Delim>
 class CsvWriter : public SinkFileSystem<CsvRow> {
@@ -33,9 +35,9 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   explicit CsvWriter(const CsvWriterOptions &options) : options_(&options) {}
   void Open(const std::string &filepath) override {
     filepath_ = filepath;
-    ofs_.open(filepath, std::ios::out | std::ios::app);
+    ofs_.open(filepath, std::ios::out | std::ios::binary);  // | std::ios::app
 
-    static thread_local std::vector<char> buf(4 * 1024 * 1024);  // 4MB
+    static thread_local std::vector<char> buf(kCsvWriterBufferSize);  // 4MB
     ofs_.rdbuf()->pubsetbuf(buf.data(), buf.size());
 
     writer_ = csv::make_csv_writer_ptr<Delim, false>(ofs_);
@@ -50,14 +52,17 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
     }
-    *writer_ << record;
+    *writer_ << std::move(record);
     return 1;
   }
 
   bool IsOpen() override { return ofs_.is_open(); }
 
   void Close() override {
-    if (ofs_) ofs_.close();
+    if (ofs_) {
+      ofs_.flush();
+      ofs_.close();
+    }
   }
 
   inline void Flush() override {
