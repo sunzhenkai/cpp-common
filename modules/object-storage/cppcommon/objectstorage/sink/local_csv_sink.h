@@ -8,6 +8,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <atomic>
 #include <fstream>
 #include <memory>
 #include <mutex>
@@ -54,18 +55,23 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
     }
+    ++in_flight_;
     std::ostringstream oss;
     writer_->WriteTo(oss, record);
     {
       std::lock_guard lock(ofs_mtx_);
       ofs_.write(oss.str().data(), oss.str().size());
     }
+    --in_flight_;
     return 1;
   }
 
   bool IsOpen() override { return ofs_.is_open(); }
 
   void Close() override {
+    while (in_flight_ != 0) {
+      // waiting
+    }
     if (ofs_) {
       ofs_.flush();
       ofs_.close();
@@ -86,6 +92,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   std::shared_ptr<CstCSVWriter<std::ofstream, Delim>> writer_;
   const CsvWriterOptions *options_{nullptr};
   size_t header_size_{0};
+  std::atomic_int in_flight_{0};
 };
 
 template <char Delim>
