@@ -50,6 +50,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   }
 
   inline int Write(CsvRow &&record) override {
+    if (is_closed) return 0;
     if (header_size_ && header_size_ != record.size()) {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
@@ -68,6 +69,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   bool IsOpen() override { return ofs_.is_open(); }
 
   void Close() override {
+    is_closed = true;
     while (in_flight_ != 0) {
       // waiting
     }
@@ -91,6 +93,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   const CsvWriterOptions *options_{nullptr};
   size_t header_size_{0};
   std::atomic_int in_flight_{0};
+  bool is_closed{false};
 };
 
 template <char Delim>

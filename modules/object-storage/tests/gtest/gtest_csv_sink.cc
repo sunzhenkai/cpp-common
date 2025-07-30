@@ -146,7 +146,7 @@ TEST(Sink, CsvBm) {
   DCsvSink::Options options{
       .name = "table",
       .name_options{.suffix = "csv"},
-      .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
+      .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 2},
       .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); },
       .writer_thread_count = 3,
       // .close_in_threads = true,

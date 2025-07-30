@@ -141,7 +141,7 @@ class BaseSink {
 
   struct State {
     int file_index{0};
-    int64_t current_row_nums{0};
+    std::atomic<int64_t> current_row_nums{0};
     bool stopped_{false};
 
     inline void Roll() {
@@ -248,11 +248,13 @@ void BaseSink<Record, FS, OfsOptions>::WriteThreadFunc() {
           RollFile();
         }
       }
-      if (ofs_) {
-        if (FS::IsThreadSafe()) {
+      if (FS::IsThreadSafe()) {
+        if (ofs_) {
           state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
-        } else {
-          std::lock_guard lock(ofs_mtx_);
+        }
+      } else {
+        std::lock_guard lock(ofs_mtx_);
+        if (ofs_) {
           state_.current_row_nums += ofs_->Write(std::forward<Record>(item));
         }
       }
@@ -286,10 +288,13 @@ void BaseSink<Record, FS, OfsOptions>::CloseCurrentFile() {
     meta = RollMeta{true, rotated_files_.back(), options_.roll_options.time_roll_policy};
   }
 
-  auto f = [meta = meta, ofs = std::move(ofs_), ops = &options_]() mutable {
-    if (ofs) {
-      ofs->Close();
-      ofs.reset();
+  auto f = [meta = meta, ofs = std::move(ofs_), ofs_mtx = &ofs_mtx_, ops = &options_]() mutable {
+    {
+      std::lock_guard lock(*ofs_mtx);
+      if (ofs) {
+        ofs->Close();
+        ofs.reset();
+      }
     }
     if (meta.is_roll) {
       ops->on_roll_callback(meta.filepath, meta.time_roll_policy);
