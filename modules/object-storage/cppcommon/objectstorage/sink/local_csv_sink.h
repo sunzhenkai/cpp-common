@@ -35,7 +35,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     filepath_ = filepath;
     ofs_.open(filepath, std::ios::out | std::ios::app);
 
-    static thread_local std::vector<char> buf(4 * 1024 * 1024);
+    static thread_local std::vector<char> buf(8 * 1024 * 1024);  // 4MB
     ofs_.rdbuf()->pubsetbuf(buf.data(), buf.size());
 
     writer_ = csv::make_csv_writer_ptr<Delim, false>(ofs_);
