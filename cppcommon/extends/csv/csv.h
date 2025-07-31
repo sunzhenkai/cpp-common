@@ -6793,6 +6793,30 @@ namespace csv {
             return *this;
         }
 
+                /**
+         * @tparam T A container such as std::vector, std::deque, or std::list
+         * 
+         * @copydoc operator<<
+         */
+        template<
+            typename T, typename TOutStream, typename Alloc, template <typename, typename> class Container,
+
+            // Avoid conflicting with tuples with two elements
+            csv::enable_if_t<std::is_class<Alloc>::value, int> = 0
+        >
+            DelimWriter& WriteTo(TOutStream &o, const Container<T, Alloc>& record) {
+            const size_t ilen = record.size();
+            size_t i = 0;
+            for (const auto& field : record) {
+                o << csv_escape(field);
+                if (i + 1 != ilen) o << Delim;
+                i++;
+            }
+            o << '\n';
+            return *this;
+        }
+
+
         /** Flushes the written data
          *
          */

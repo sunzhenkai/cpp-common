@@ -1,5 +1,6 @@
 #include <spdlog/spdlog.h>
 
+#include <chrono>
 #include <string>
 #include <thread>
 #include <utility>
@@ -141,13 +142,23 @@ TEST(Sink, CsvDelim) {
 
 TEST(Sink, CsvBm) {
   cppcommon::TimeRuler tr;
-  using DCsvSink = CsvSinkT<'|'>;
+  // using DCsvSink = CsvSinkT<'|'>;
+  using DCsvSink = CsvSinkT<'\001'>;
+
+  int columns = 500;
+
+  auto header = CsvRow{};
+  for (auto i = 0; i < columns; ++i) {
+    header.emplace_back(fmt::format("header{}", i));
+  }
 
   DCsvSink::Options options{
       .name = "table",
       .name_options{.suffix = "csv"},
       .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
       .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); },
+      .ofs_options{.headers = header}
+      // .close_in_threads = true,
   };
   DCsvSink s(std::move(options));
   auto record = CsvRow{};
@@ -173,4 +184,6 @@ TEST(Sink, CsvBm) {
     t.join();
   }
   std::cout << "Elapsed: " << tr.ElapsedNow() << " ms\n";
+
+  // std::this_thread::sleep_for(std::chrono::seconds(20));
 }

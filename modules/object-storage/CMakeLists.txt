@@ -8,6 +8,7 @@ find_package(unofficial-aliyun-oss-cpp-sdk CONFIG REQUIRED)
 find_package(google_cloud_cpp_common CONFIG REQUIRED)
 find_package(google_cloud_cpp_rest_internal CONFIG REQUIRED)
 find_package(google_cloud_cpp_storage CONFIG REQUIRED)
+find_package(unofficial-concurrentqueue CONFIG REQUIRED)
 
 set(OS_THIRD_LIBRARIES
     spdlog::spdlog
@@ -17,6 +18,7 @@ set(OS_THIRD_LIBRARIES
     google-cloud-cpp::rest_internal
     CURL::libcurl
     google-cloud-cpp::storage
+    unofficial::concurrentqueue::concurrentqueue
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Arrow::arrow_static,Arrow::arrow_shared>"
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Parquet::parquet_static,Parquet::parquet_shared>"
 )
