@@ -109,8 +109,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     if (ofs_) ofs_.flush();
   }
 
-  static inline bool IsThreadSafe() { return true; }
-
  protected:
   std::string filepath_;
   std::ofstream ofs_;
