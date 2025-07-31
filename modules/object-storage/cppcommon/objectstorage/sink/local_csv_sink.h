@@ -59,8 +59,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   }
 
   inline void WriteThreadFunc() {
-    constexpr int kMaxDequeue = 100;
-    CsvRow records[kMaxDequeue];
     CsvRow record;
     while (running_ || queue_.size_approx() != 0) {
       queue_.wait_dequeue(record);
