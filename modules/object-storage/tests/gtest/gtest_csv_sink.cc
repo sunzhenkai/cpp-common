@@ -144,11 +144,19 @@ TEST(Sink, CsvBm) {
   cppcommon::TimeRuler tr;
   using DCsvSink = CsvSinkT<'|'>;
 
+  int columns = 500;
+
+  auto header = CsvRow{};
+  for (auto i = 0; i < columns; ++i) {
+    header.emplace_back(fmt::format("header{}", i));
+  }
+
   DCsvSink::Options options{
       .name = "table",
       .name_options{.suffix = "csv"},
       .roll_options{.is_rotate = true, .max_rows_per_file = 10000 * 10},
       .on_roll_callback = [](const std::string &fn, auto) { spdlog::info("rollfile: {}", fn); },
+      .ofs_options{.headers = header}
       // .close_in_threads = true,
   };
   DCsvSink s(std::move(options));
