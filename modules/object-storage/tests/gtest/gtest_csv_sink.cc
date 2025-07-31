@@ -142,7 +142,8 @@ TEST(Sink, CsvDelim) {
 
 TEST(Sink, CsvBm) {
   cppcommon::TimeRuler tr;
-  using DCsvSink = CsvSinkT<'|'>;
+  // using DCsvSink = CsvSinkT<'|'>;
+  using DCsvSink = CsvSinkT<'\001'>;
 
   int columns = 500;
 
