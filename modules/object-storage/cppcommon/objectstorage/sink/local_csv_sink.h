@@ -114,7 +114,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   std::shared_ptr<CstCSVWriter<std::ofstream, Delim>> writer_;
   const CsvWriterOptions *options_{nullptr};
   size_t header_size_{0};
-  std::atomic_int in_flight_{0};
   moodycamel::BlockingConcurrentQueue<CsvRow> queue_;
   std::vector<std::thread> writer_threads_;
   bool running_{true};
