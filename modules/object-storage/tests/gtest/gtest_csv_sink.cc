@@ -1,5 +1,6 @@
 #include <spdlog/spdlog.h>
 
+#include <chrono>
 #include <string>
 #include <thread>
 #include <utility>
@@ -174,4 +175,6 @@ TEST(Sink, CsvBm) {
     t.join();
   }
   std::cout << "Elapsed: " << tr.ElapsedNow() << " ms\n";
+
+  // std::this_thread::sleep_for(std::chrono::seconds(20));
 }

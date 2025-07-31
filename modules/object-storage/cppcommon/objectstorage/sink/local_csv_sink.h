@@ -9,6 +9,7 @@
 #include <concurrentqueue/concurrentqueue.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <atomic>
 #include <fstream>
 #include <memory>
@@ -26,7 +27,7 @@ namespace cppcommon::os {
 
 struct CsvWriterOptions {
   std::vector<std::string> headers;
-  unsigned int writer_threads_count{std::thread::hardware_concurrency()};
+  unsigned int writer_threads_count{std::max(1u, std::thread::hardware_concurrency() / 2)};
 };
 
 template <class OutputStream, char Delim>
@@ -60,11 +61,16 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   inline void WriteThreadFunc() {
     constexpr int kMaxDequeue = 100;
     CsvRow records[kMaxDequeue];
+    CsvRow record;
     while (running_ || queue_.size_approx() != 0) {
-      auto count = queue_.try_dequeue_bulk(records, kMaxDequeue);
-      for (size_t i = 0; i < count; ++i) {
+      queue_.wait_dequeue(record);
+      // terminate signal
+      if (!running_ && record.empty()) {
+        break;
+      }
+      {
         std::ostringstream oss;
-        writer_->WriteTo(oss, records[i]);
+        writer_->WriteTo(oss, record);
         {
           std::lock_guard lock(ofs_mtx_);
           ofs_.write(oss.str().data(), oss.str().size());
@@ -78,27 +84,6 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
     }
-
-    // in_flight_.fetch_add(1, std::memory_order_relaxed);
-    // auto future = std::async(std::launch::async, [this, record = std::move(record)]() mutable {
-    //   std::ostringstream oss;
-    //   writer_->WriteTo(oss, record);
-    //   {
-    //     std::lock_guard lock(ofs_mtx_);
-    //     ofs_.write(oss.str().data(), oss.str().size());
-    //   }
-    //   in_flight_.fetch_sub(1, std::memory_order_relaxed);
-    // });
-    // (void)future;
-
-    // ++in_flight_;
-    // std::ostringstream oss;
-    // writer_->WriteTo(oss, record);
-    // {
-    //   // std::lock_guard lock(ofs_mtx_);
-    //   ofs_.write(oss.str().data(), oss.str().size());
-    // }
-    // --in_flight_;
     queue_.enqueue(std::forward<CsvRow>(record));
     return 1;
   }
@@ -107,6 +92,10 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
 
   void Close() override {
     running_ = false;
+    // sending terminate signals
+    for (size_t i = 0; i < writer_threads_.size(); ++i) {
+      queue_.enqueue({});
+    }
     for (auto &th : writer_threads_) {
       if (th.joinable()) th.join();
     }
