@@ -52,7 +52,7 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     if (header_size_) {
       *writer_ << options_->headers;
     }
-    // start writer threds
+    // start writer threads
     for (unsigned int i = 0; i < options_->writer_threads_count; ++i) {
       writer_threads_.emplace_back(&CsvWriter::WriteThreadFunc, this);
     }
