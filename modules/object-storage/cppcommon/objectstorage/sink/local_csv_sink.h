@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <concurrentqueue/concurrentqueue.h>
 #include <spdlog/spdlog.h>
 
 #include <atomic>
@@ -14,8 +15,10 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "concurrentqueue/blockingconcurrentqueue.h"
 #include "cppcommon/extends/csv/csv.h"
 #include "cppcommon/objectstorage/sink/base_sink.h"
 
@@ -23,6 +26,7 @@ namespace cppcommon::os {
 
 struct CsvWriterOptions {
   std::vector<std::string> headers;
+  unsigned int writer_threads_count{std::thread::hardware_concurrency()};
 };
 
 template <class OutputStream, char Delim>
@@ -47,31 +51,64 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
     if (header_size_) {
       *writer_ << options_->headers;
     }
+    // start writer threds
+    for (unsigned int i = 0; i < options_->writer_threads_count; ++i) {
+      writer_threads_.emplace_back(&CsvWriter::WriteThreadFunc, this);
+    }
+  }
+
+  inline void WriteThreadFunc() {
+    constexpr int kMaxDequeue = 100;
+    CsvRow records[kMaxDequeue];
+    while (running_ || queue_.size_approx() != 0) {
+      auto count = queue_.try_dequeue_bulk(records, kMaxDequeue);
+      for (size_t i = 0; i < count; ++i) {
+        std::ostringstream oss;
+        writer_->WriteTo(oss, records[i]);
+        {
+          std::lock_guard lock(ofs_mtx_);
+          ofs_.write(oss.str().data(), oss.str().size());
+        }
+      }
+    }
   }
 
   inline int Write(CsvRow &&record) override {
-    if (is_closed) return 0;
     if (header_size_ && header_size_ != record.size()) {
       spdlog::error("[CsvWriter] unexpected columns size. [header={}, record={}]", header_size_, record.size());
       return 0;
     }
-    ++in_flight_;
-    std::ostringstream oss;
-    writer_->WriteTo(oss, record);
-    {
-      std::lock_guard lock(ofs_mtx_);
-      ofs_.write(oss.str().data(), oss.str().size());
-    }
-    --in_flight_;
+
+    // in_flight_.fetch_add(1, std::memory_order_relaxed);
+    // auto future = std::async(std::launch::async, [this, record = std::move(record)]() mutable {
+    //   std::ostringstream oss;
+    //   writer_->WriteTo(oss, record);
+    //   {
+    //     std::lock_guard lock(ofs_mtx_);
+    //     ofs_.write(oss.str().data(), oss.str().size());
+    //   }
+    //   in_flight_.fetch_sub(1, std::memory_order_relaxed);
+    // });
+    // (void)future;
+
+    // ++in_flight_;
+    // std::ostringstream oss;
+    // writer_->WriteTo(oss, record);
+    // {
+    //   // std::lock_guard lock(ofs_mtx_);
+    //   ofs_.write(oss.str().data(), oss.str().size());
+    // }
+    // --in_flight_;
+    queue_.enqueue(std::forward<CsvRow>(record));
     return 1;
   }
 
   bool IsOpen() override { return ofs_.is_open(); }
 
   void Close() override {
-    is_closed = true;
-    while (in_flight_ != 0) {
-      // waiting
+    running_ = false;
+    for (auto &th : writer_threads_) {
+      if (th.joinable()) th.join();
     }
     if (ofs_) {
       ofs_.flush();
@@ -93,7 +130,9 @@ class CsvWriter : public SinkFileSystem<CsvRow> {
   const CsvWriterOptions *options_{nullptr};
   size_t header_size_{0};
   std::atomic_int in_flight_{0};
-  bool is_closed{false};
+  moodycamel::BlockingConcurrentQueue<CsvRow> queue_;
+  std::vector<std::thread> writer_threads_;
+  bool running_{true};
 };
 
 template <char Delim>
