@@ -133,7 +133,7 @@ class BaseSink {
     FileNameOptions name_options;
     RollOptions roll_options;
     OnRollFileCallback on_roll_callback{};  // callling with last filepath when rolling file
-    bool close_in_threads{false};
+    bool close_in_threads{true};
     [[no_unique_address]] std::conditional_t<std::is_void_v<OfsOptions>, int, OfsOptions> ofs_options;
   };
 
@@ -278,6 +278,7 @@ void BaseSink<Record, FS, OfsOptions>::CloseCurrentFile() {
       ops->on_roll_callback(meta.filepath, meta.time_roll_policy);
     }
   };
+  // on roll callback maybe block read thread
   if (options_.close_in_threads) {
     close_threads_.emplace_back(std::thread(std::move(f)));
   } else {
