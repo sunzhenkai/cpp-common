@@ -177,8 +177,6 @@ class BaseSink {
   Options options_;
   State state_{};
 
-  std::mutex roll_mtx_;
-  std::mutex ofs_mtx_;
   moodycamel::BlockingConcurrentQueue<Record> queue_;
   std::vector<std::thread> writer_threads_;
   std::shared_ptr<FS> ofs_;
@@ -271,13 +269,10 @@ void BaseSink<Record, FS, OfsOptions>::CloseCurrentFile() {
     meta = RollMeta{true, rotated_files_.back(), options_.roll_options.time_roll_policy};
   }
 
-  auto f = [meta = meta, ofs = std::move(ofs_), ofs_mtx = &ofs_mtx_, ops = &options_]() mutable {
-    {
-      std::lock_guard lock(*ofs_mtx);
-      if (ofs) {
-        ofs->Close();
-        ofs.reset();
-      }
+  auto f = [meta = meta, ofs = std::move(ofs_), ops = &options_]() mutable {
+    if (ofs) {
+      ofs->Close();
+      ofs.reset();
     }
     if (meta.is_roll) {
       ops->on_roll_callback(meta.filepath, meta.time_roll_policy);
