@@ -27,4 +27,6 @@ class OssStorageProvider : public StorageProvider {
  private:
   std::shared_ptr<oss::OssClient> client_;
 };
+
+std::string GetRegionFromEndpoint(const std::string &endpoint);
 }  // namespace cppcommon::os

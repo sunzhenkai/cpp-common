@@ -6,6 +6,7 @@
 #include "cppcommon/io/file/rw.h"
 #include "cppcommon/objectstorage/transfor/api.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
+#include "cppcommon/objectstorage/transfor/storage_provider_oss.h"
 #include "cppcommon/utils/to_str.h"
 #include "gtest/gtest.h"
 
@@ -32,4 +33,9 @@ TEST(Trans, Oss) {
   } else {
     spdlog::error("download failed, error={}", r2.status().ToString());
   }
+}
+
+TEST(Trans, OssRegion) {
+  auto region = cppcommon::os::GetRegionFromEndpoint("oss-us-east-1-internal.aliyuncs.com");
+  ASSERT_EQ(region, "us-east-1");
 }
