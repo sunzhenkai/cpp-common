@@ -15,6 +15,7 @@
 #include "cppcommon/extends/fmt/fmt.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
 #include "cppcommon/utils/os.h"
+#include "cppcommon/utils/str.h"
 #include "spdlog/spdlog.h"
 
 namespace cppcommon::os {
@@ -23,11 +24,11 @@ namespace fs = std::filesystem;
 std::string GetRegionFromEndpoint(const std::string &endpoint) {
   const std::string oss_prefix = "oss-";
   auto it = endpoint.find_first_of('.');
-  if (it == std::string::npos || it <= oss_prefix.size()) {
-    return "";
-  } else {
-    return endpoint.substr(oss_prefix.size(), it - oss_prefix.size());
+  std::string region;
+  if (it != std::string::npos && it > oss_prefix.size()) {
+    region = endpoint.substr(oss_prefix.size(), it - oss_prefix.size());
   }
+  return cppcommon::TrimSuffix(region, "-internal");
 }
 
 std::string GetOssRegion(const StorageProviderOptions &options) {
